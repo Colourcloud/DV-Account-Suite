@@ -14,6 +14,11 @@ export async function GET(
       return NextResponse.json({ error: 'Character not found' }, { status: 404 })
     }
     
+    // Convert warehouse data from Buffer to base64 string if it exists
+    if (characterData.warehouse_data && Buffer.isBuffer(characterData.warehouse_data)) {
+      characterData.warehouse_data = characterData.warehouse_data.toString('base64')
+    }
+    
     return NextResponse.json(characterData)
   } catch (error) {
     console.error('Error fetching character data:', error)

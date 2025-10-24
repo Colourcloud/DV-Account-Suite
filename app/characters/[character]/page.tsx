@@ -14,6 +14,7 @@ import { ArrowLeft, Save, RotateCcw, Shield, Crown, Zap, Heart, Brain, Users, Co
 import Link from "next/link"
 import { getRaceToClass, getClassImage, formatZen } from "@/lib/class-utils"
 import { useToast } from "@/hooks/use-toast"
+import { WarehouseGrid } from "@/components/warehouse-grid"
 
 interface CharacterStats {
   name: string
@@ -33,6 +34,7 @@ interface CharacterStats {
   account_name: string
   email: string
   blocked: number
+  warehouse_data?: Buffer | string
 }
 
 interface UICharacterStats {
@@ -52,6 +54,7 @@ interface UICharacterStats {
   vipStatus: boolean
   isGameMaster: boolean
   isBanned: boolean
+  warehouseData?: Buffer | string
 }
 
 const characterClasses = [
@@ -99,7 +102,8 @@ export default function CharacterPage({ params }: { params: Promise<{ character:
       ruudAmount: dbData.ruud_money || 0,
       vipStatus: dbData.vip_status > 0,
       isGameMaster: dbData.blocked === 0 && dbData.name.toLowerCase().includes('gm'), // Simple GM detection
-      isBanned: dbData.blocked === 1 // Account is banned
+      isBanned: dbData.blocked === 1, // Account is banned
+      warehouseData: dbData.warehouse_data
     }
   }
 
@@ -642,6 +646,15 @@ export default function CharacterPage({ params }: { params: Promise<{ character:
             </Button>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Warehouse Section */}
+      <div className="mt-6 w-1/2">
+        <WarehouseGrid 
+          accountId={1} // TODO: Get actual account ID from character data
+          characterName={characterData.name}
+          warehouseData={characterData.warehouseData}
+        />
       </div>
     </DashboardLayout>
   )

@@ -209,10 +209,11 @@ export class CharacterManager {
     const connection = await getConnection()
     try {
       const [rows] = await connection.execute(
-        `SELECT ci.*, a.account as account_name, a.email, ad.vip_status
+        `SELECT ci.*, a.account as account_name, a.email, ad.vip_status, aw.inventory as warehouse_data
          FROM character_info ci
          LEFT JOIN accounts a ON ci.account_id = a.guid
          LEFT JOIN account_data ad ON a.guid = ad.account_id
+         LEFT JOIN account_warehouse aw ON a.guid = aw.account_id
          WHERE ci.name = ?`,
         [characterName]
       )
