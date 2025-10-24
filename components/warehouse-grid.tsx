@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Package, Plus, Trash2, RefreshCw } from "lucide-react"
 import { getItemById, ItemData, getItemImagePathById } from "@/lib/items-data"
-import { decodeWarehouseData, positionToGridCoords, WarehouseItemData, convertWarehouseItemsToGrid, decodeExcellentOptions, getItemTypeFromId } from "@/lib/warehouse-utils"
+import { decodeWarehouseData, positionToGridCoords, WarehouseItemData, convertWarehouseItemsToGrid, decodeExcellentOptions, getItemTypeFromId, encodeWarehouseData, canPlaceItem, placeItemInGrid, gridCoordsToPosition } from "@/lib/warehouse-utils"
 
 interface WarehouseItem {
   id: number
@@ -42,21 +42,35 @@ interface WarehouseItem {
   quantity?: number
 }
 
+interface PendingItem {
+  id: number
+  name: string
+  width: number
+  height: number
+  level: number
+  durability: number
+  luck: boolean
+}
+
 interface WarehouseGridProps {
   accountId: number
   characterName: string
   warehouseData?: string // Base64 encoded warehouse data from database
+  onWarehouseUpdate?: (newWarehouseData: string) => void
+  onItemPlacementReady?: (startPlacement: (item: PendingItem) => void) => void
 }
 
 const WAREHOUSE_WIDTH = 8
 const WAREHOUSE_HEIGHT = 15
 const TOTAL_SLOTS = WAREHOUSE_WIDTH * WAREHOUSE_HEIGHT
 
-export function WarehouseGrid({ accountId, characterName, warehouseData }: WarehouseGridProps) {
+export function WarehouseGrid({ accountId, characterName, warehouseData, onWarehouseUpdate, onItemPlacementReady }: WarehouseGridProps) {
   const [warehouseItems, setWarehouseItems] = useState<WarehouseItem[]>([])
   const [grid, setGrid] = useState<(WarehouseItem | null)[][]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pendingItem, setPendingItem] = useState<PendingItem | null>(null)
+  const [isPlacingItem, setIsPlacingItem] = useState(false)
 
   // Initialize empty grid
   useEffect(() => {
@@ -77,15 +91,20 @@ export function WarehouseGrid({ accountId, characterName, warehouseData }: Wareh
         let items: WarehouseItem[] = []
         
         if (warehouseData) {
+          console.log('Warehouse data received:', warehouseData)
           // Decode the warehouse data
           const decodedItems = decodeWarehouseData(warehouseData)
+          console.log('Decoded items:', decodedItems)
+          
           
           // Convert decoded items to WarehouseItem format
           const convertedItems = convertWarehouseItemsToGrid(decodedItems)
+          console.log('Converted items:', convertedItems)
           
           // Enhance with item data from the items database
           items = convertedItems.map(item => {
             const itemData = getItemById(item.id)
+            console.log('Item ID:', item.id, 'Item data found:', !!itemData, itemData?.name)
             
             return {
               ...item,
@@ -114,12 +133,15 @@ export function WarehouseGrid({ accountId, characterName, warehouseData }: Wareh
               excellentOption: item.excellentOption
             }
           })
+          console.log('Final items:', items)
         } else {
           // Fallback to empty warehouse if no data provided
           items = []
         }
         
+        console.log('Setting warehouse items:', items)
         setWarehouseItems(items)
+        console.log('Placing items in grid...')
         placeItemsInGrid(items)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load warehouse items')
@@ -132,23 +154,38 @@ export function WarehouseGrid({ accountId, characterName, warehouseData }: Wareh
   }, [accountId, warehouseData])
 
   const placeItemsInGrid = (items: WarehouseItem[]) => {
+    console.log('placeItemsInGrid called with items:', items)
     const newGrid: (WarehouseItem | null)[][] = []
     for (let y = 0; y < WAREHOUSE_HEIGHT; y++) {
       newGrid[y] = new Array(WAREHOUSE_WIDTH).fill(null)
     }
 
-    items.forEach(item => {
+    items.forEach((item, index) => {
+      console.log(`Placing item ${index}:`, item)
       if (item.position) {
         const { x, y } = item.position
+        console.log(`Item position: x=${x}, y=${y}, size=${item.width}x${item.height}`)
         for (let dy = 0; dy < item.height; dy++) {
           for (let dx = 0; dx < item.width; dx++) {
             if (y + dy < WAREHOUSE_HEIGHT && x + dx < WAREHOUSE_WIDTH) {
               newGrid[y + dy][x + dx] = item
+              console.log(`Placed at grid[${y + dy}][${x + dx}]`)
             }
           }
         }
+      } else {
+        console.log('Item has no position!')
       }
     })
+
+    console.log('Final grid state:')
+    for (let y = 0; y < 3; y++) {
+      let row = ''
+      for (let x = 0; x < 3; x++) {
+        row += newGrid[y][x] ? 'X' : '.'
+      }
+      console.log(`Row ${y}: ${row}`)
+    }
 
     setGrid(newGrid)
   }
@@ -300,6 +337,139 @@ export function WarehouseGrid({ accountId, characterName, warehouseData }: Wareh
     return TOTAL_SLOTS - getUsedSlots()
   }
 
+  // Function to start placing an item
+  const startItemPlacement = useCallback((item: PendingItem) => {
+    setPendingItem(item)
+    setIsPlacingItem(true)
+  }, [])
+
+  // Function to handle grid cell clicks
+  const handleGridClick = async (x: number, y: number) => {
+    if (!isPlacingItem || !pendingItem) return
+
+    // Check if the item can fit at this position
+    if (canPlaceItem(grid, x, y, pendingItem.width, pendingItem.height)) {
+      try {
+        // Get the next serial number from the database
+        const response = await fetch('/api/characters/serial', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        if (!response.ok) {
+          throw new Error('Failed to get serial number')
+        }
+        
+        const { serial } = await response.json()
+        console.log('Got serial number:', serial)
+
+        // Create the new warehouse item
+        const newWarehouseItem: WarehouseItem = {
+          id: pendingItem.id,
+          group: Math.floor(pendingItem.id / 512),
+          index: pendingItem.id % 512,
+          slot: 0,
+          skill: 0,
+          width: pendingItem.width,
+          height: pendingItem.height,
+          serial: serial,
+          option: 0,
+          drop: 1,
+          name: pendingItem.name,
+          level: pendingItem.level,
+          dmgMin: 0,
+          dmgMax: 0,
+          attackSpeed: 0,
+          durability: pendingItem.durability,
+          magicDurability: 0,
+          magicPower: 0,
+          reqLevel: 0,
+          reqStrength: 0,
+          reqDexterity: 0,
+          reqEnergy: 0,
+          reqVitality: 0,
+          reqCommand: 0,
+          setType: 0,
+          classes: [1, 1, 1, 1, 1, 1, 1],
+          luck: pendingItem.luck ? 1 : 0,
+          excellentOption: 0,
+          position: { x, y }
+        }
+
+        // Update the grid
+        const newGrid = placeItemInGrid(grid, x, y, newWarehouseItem)
+        setGrid(newGrid)
+
+        // Add to warehouse items
+        const newWarehouseItems = [...warehouseItems, newWarehouseItem]
+        setWarehouseItems(newWarehouseItems)
+
+      // Convert to warehouse data format and encode
+      const warehouseDataItems: WarehouseItemData[] = newWarehouseItems.map(item => ({
+        position: gridCoordsToPosition(item.position!.x, item.position!.y),
+        itemId: item.id,
+        level: item.level,
+        durability: item.durability,
+        skill: item.skill,
+        luck: item.luck,
+        option: item.option,
+        excellentOption: item.excellentOption,
+        ancientOption: 0,
+        serial: 0, // Set to 0 as requested
+        serial2: 0
+      }))
+
+      const encodedData = encodeWarehouseData(warehouseDataItems)
+        
+        // Notify parent component of the update
+        if (onWarehouseUpdate) {
+          onWarehouseUpdate(encodedData)
+        }
+
+        // Force push to database immediately
+        try {
+          const response = await fetch(`/api/characters/${characterName}/warehouse`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ warehouseData: encodedData }),
+          })
+
+          if (response.ok) {
+            console.log('Warehouse data saved to database successfully')
+          } else {
+            console.error('Failed to save warehouse data to database')
+          }
+        } catch (error) {
+          console.error('Error saving warehouse data:', error)
+        }
+
+        // Reset placement state
+        setPendingItem(null)
+        setIsPlacingItem(false)
+      } catch (error) {
+        console.error('Error getting serial number:', error)
+        // You might want to show an error message to the user here
+      }
+    }
+  }
+
+  // Function to cancel item placement
+  const cancelItemPlacement = () => {
+    setPendingItem(null)
+    setIsPlacingItem(false)
+  }
+
+  // Expose the startItemPlacement function to parent component
+  useEffect(() => {
+    if (onItemPlacementReady) {
+      onItemPlacementReady(startItemPlacement)
+    }
+  }, [onItemPlacementReady, startItemPlacement])
+
   if (isLoading) {
     return (
       <Card>
@@ -356,14 +526,27 @@ export function WarehouseGrid({ accountId, characterName, warehouseData }: Wareh
             </CardDescription>
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
-            <Button variant="outline" size="sm">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
+            {isPlacingItem && pendingItem ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-blue-400">
+                  Placing: {pendingItem.name} ({pendingItem.width}x{pendingItem.height})
+                </span>
+                <Button variant="outline" size="sm" onClick={cancelItemPlacement}>
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button variant="outline" size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Item
+                </Button>
+                <Button variant="outline" size="sm">
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -397,15 +580,27 @@ export function WarehouseGrid({ accountId, characterName, warehouseData }: Wareh
                   style.gridRowEnd = `span ${item.height}`
                 }
 
+                // Check if this cell is part of a valid placement area for pending item
+                const isValidPlacement = isPlacingItem && pendingItem && 
+                  canPlaceItem(grid, x, y, pendingItem.width, pendingItem.height)
+                
+                const isPlacementPreview = isPlacingItem && pendingItem && 
+                  x >= 0 && y >= 0 && x < WAREHOUSE_WIDTH && y < WAREHOUSE_HEIGHT &&
+                  x < pendingItem.width && y < pendingItem.height
+
                 return (
                   <div
                     key={`${x}-${y}`}
                     className={`border border-[#242424] ${
                       isTopLeft && item ? 'w-full h-full' : 'w-10 h-10'
-                    } flex items-center justify-center ${
-                      item ? 'bg-black dark:bg-black' : 'bg-[#0f0f0f]'
+                    } flex items-center justify-center cursor-pointer ${
+                      item ? 'bg-black dark:bg-black' : 
+                      isValidPlacement ? 'bg-green-900/30 hover:bg-green-800/50' :
+                      isPlacementPreview ? 'bg-blue-900/30' :
+                      'bg-[#0f0f0f] hover:bg-gray-800'
                     }`}
                     style={style}
+                    onClick={() => handleGridClick(x, y)}
                   >
                     {item ? getCellContent(x, y) : null}
                   </div>

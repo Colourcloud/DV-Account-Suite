@@ -226,7 +226,8 @@ export class CharacterManager {
 
   // Get the next item serial number
   static async getNextItemSerial() {
-    const connection = await getConnection()
+    // Use direct connection instead of pool to ensure transaction commits
+    const connection = await mysql.createConnection(dbConfig)
     try {
       console.log('Getting next serial number...')
       
@@ -246,7 +247,7 @@ export class CharacterManager {
       console.error('Error getting serial number:', error)
       throw error
     } finally {
-      connection.release()
+      await connection.end()
     }
   }
 
@@ -334,6 +335,33 @@ export class CharacterManager {
       const [result] = await connection.execute(
         'DELETE FROM character_info WHERE name = ?',
         [characterName]
+      )
+      return result
+    } finally {
+      connection.release()
+    }
+  }
+
+  // Update warehouse data
+  static async updateWarehouse(characterName: string, warehouseData: string) {
+    const connection = await getConnection()
+    try {
+      // First get the account_id for the character
+      const [characterRows] = await connection.execute(
+        'SELECT account_id FROM character_info WHERE name = ?',
+        [characterName]
+      )
+      
+      if (!characterRows || (characterRows as any[]).length === 0) {
+        throw new Error('Character not found')
+      }
+      
+      const accountId = (characterRows as any[])[0].account_id
+      
+      // Update the warehouse data in account_warehouse table
+      const [result] = await connection.execute(
+        'UPDATE account_warehouse SET inventory = ? WHERE account_id = ?',
+        [warehouseData, accountId]
       )
       return result
     } finally {

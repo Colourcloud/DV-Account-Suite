@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { DashboardLayout } from "@/components/dashboard/layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ import { getRaceToClass, getClassImage, formatZen } from "@/lib/class-utils"
 import { useToast } from "@/hooks/use-toast"
 import { WarehouseGrid } from "@/components/warehouse-grid"
 import { ItemCreatorForm } from "@/components/item-creator-form"
+import { ITEMS_DATABASE } from "@/lib/items-data"
 
 interface CharacterStats {
   name: string
@@ -83,7 +84,42 @@ export default function CharacterPage({ params }: { params: Promise<{ character:
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [startItemPlacement, setStartItemPlacement] = useState<((item: any) => void) | null>(null)
   const { toast } = useToast()
+
+  // Memoize the warehouse update callback
+  const handleWarehouseUpdate = useCallback(async (newData: string) => {
+    try {
+      const response = await fetch(`/api/characters/${characterData?.name}/warehouse`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ warehouseData: newData }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Warehouse Updated",
+          description: "Item has been successfully added to the warehouse.",
+        })
+      } else {
+        throw new Error('Failed to update warehouse')
+      }
+    } catch (error) {
+      console.error('Error updating warehouse:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save item to warehouse. Please try again.",
+        variant: "destructive"
+      })
+    }
+  }, [characterData?.name, toast])
+
+  // Memoize the item placement ready callback
+  const handleItemPlacementReady = useCallback((placementFn: (item: any) => void) => {
+    setStartItemPlacement(() => placementFn)
+  }, [])
 
   // Helper function to convert database data to UI format
   const convertToUIFormat = (dbData: CharacterStats): UICharacterStats => {
@@ -657,6 +693,8 @@ export default function CharacterPage({ params }: { params: Promise<{ character:
             accountId={1} // TODO: Get actual account ID from character data
             characterName={characterData.name}
             warehouseData={characterData.warehouseData as string}
+            onWarehouseUpdate={handleWarehouseUpdate}
+            onItemPlacementReady={handleItemPlacementReady}
           />
         </div>
 
@@ -664,12 +702,34 @@ export default function CharacterPage({ params }: { params: Promise<{ character:
         <div>
           <ItemCreatorForm 
             onItemCreate={(itemData) => {
-              // TODO: Implement item creation logic
-              console.log('Item created:', itemData)
-              toast({
-                title: "Item Created",
-                description: `${itemData.itemName} (+${itemData.itemLevel}) has been created.`,
-              })
+              if (startItemPlacement) {
+                // Get item data from the database
+                const itemFromDb = ITEMS_DATABASE.find(item => item.id === itemData.itemId)
+                if (itemFromDb) {
+                  const pendingItem = {
+                    id: itemData.itemId,
+                    name: itemData.itemName,
+                    width: itemFromDb.width,
+                    height: itemFromDb.height,
+                    level: itemData.itemLevel,
+                    durability: itemData.durability,
+                    luck: itemData.luck
+                  }
+                  
+                  startItemPlacement(pendingItem)
+                  
+                  toast({
+                    title: "Item Ready for Placement",
+                    description: `Click on the warehouse grid to place ${itemData.itemName} (+${itemData.itemLevel})`,
+                  })
+                }
+              } else {
+                toast({
+                  title: "Error",
+                  description: "Warehouse not ready for item placement",
+                  variant: "destructive"
+                })
+              }
             }}
           />
         </div>
