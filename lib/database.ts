@@ -121,6 +121,75 @@ export class AccountManager {
     }
   }
 
+  // Update account data (credits, vip status, etc.)
+  static async updateAccountData(username: string, updateData: {
+    credits?: number
+    web_credits?: number
+    vip_status?: number
+  }) {
+    const connection = await getConnection()
+    try {
+      // First get the account ID
+      const [accountRows] = await connection.execute(
+        'SELECT guid FROM accounts WHERE account = ?',
+        [username]
+      )
+      
+      if (!accountRows || (accountRows as any[]).length === 0) {
+        throw new Error('Account not found')
+      }
+      
+      const accountId = (accountRows as any[])[0].guid
+      
+      const fields = []
+      const values = []
+      
+      if (updateData.credits !== undefined) {
+        fields.push('credits = ?')
+        values.push(updateData.credits)
+      }
+      if (updateData.web_credits !== undefined) {
+        fields.push('web_credits = ?')
+        values.push(updateData.web_credits)
+      }
+      if (updateData.vip_status !== undefined) {
+        fields.push('vip_status = ?')
+        values.push(updateData.vip_status)
+      }
+
+      if (fields.length === 0) return null
+
+      values.push(accountId)
+      
+      // Check if account_data record exists
+      const [existingRows] = await connection.execute(
+        'SELECT account_id FROM account_data WHERE account_id = ?',
+        [accountId]
+      )
+      
+      let result
+      if (existingRows && (existingRows as any[]).length > 0) {
+        // Update existing record
+        result = await connection.execute(
+          `UPDATE account_data SET ${fields.join(', ')} WHERE account_id = ?`,
+          values
+        )
+      } else {
+        // Create new record
+        const insertFields = ['account_id', ...fields]
+        const insertValues = [accountId, ...values.slice(0, -1)] // Remove the last value (accountId) since it's already in the array
+        result = await connection.execute(
+          `INSERT INTO account_data (${insertFields.join(', ')}) VALUES (${insertFields.map(() => '?').join(', ')})`,
+          insertValues
+        )
+      }
+      
+      return result
+    } finally {
+      connection.release()
+    }
+  }
+
   // Delete account
   static async deleteAccount(username: string) {
     const connection = await getConnection()
@@ -197,6 +266,24 @@ export class CharacterManager {
       const [rows] = await connection.execute(
         'SELECT * FROM character_info WHERE account_id = ?',
         [accountId]
+      )
+      return rows
+    } finally {
+      connection.release()
+    }
+  }
+
+  // Get characters by account username
+  static async getCharactersByAccountUsername(username: string) {
+    const connection = await getConnection()
+    try {
+      const [rows] = await connection.execute(
+        `SELECT ci.*, a.account as account_name 
+         FROM character_info ci
+         LEFT JOIN accounts a ON ci.account_id = a.guid
+         WHERE a.account = ?
+         ORDER BY ci.level DESC`,
+        [username]
       )
       return rows
     } finally {
