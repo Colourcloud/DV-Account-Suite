@@ -34,7 +34,9 @@ interface ItemCreatorFormProps {
     itemName: string
     itemLevel: number
     luck: boolean
+    skill: boolean
     durability: number
+    option: number
   }) => void
 }
 
@@ -44,7 +46,9 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
   const [filteredItems, setFilteredItems] = useState<ItemData[]>([])
   const [itemLevel, setItemLevel] = useState<string>("1")
   const [luck, setLuck] = useState<boolean>(false)
+  const [skill, setSkill] = useState<boolean>(false)
   const [durability, setDurability] = useState<string>("255")
+  const [option, setOption] = useState<string>("0")
 
   // Filter items when category changes
   useEffect(() => {
@@ -81,7 +85,9 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
         itemName: item.name,
         itemLevel: parseInt(itemLevel),
         luck: luck,
-        durability: parseInt(durability)
+        skill: skill,
+        durability: parseInt(durability),
+        option: parseInt(option)
       })
     }
   }
@@ -198,6 +204,23 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
             </div>
           </div>
 
+          {/* Option Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="option">Item Option</Label>
+            <Select value={option} onValueChange={setOption}>
+              <SelectTrigger id="option" className="w-full">
+                <SelectValue placeholder="Select option..." />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 8 }, (_, i) => (
+                  <SelectItem key={i} value={i.toString()}>
+                    {i === 0 ? "No Option" : `+${i * 4}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Luck Checkbox */}
           <div className="flex items-center space-x-2">
             <input
@@ -209,6 +232,20 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
             />
             <Label htmlFor="luck" className="cursor-pointer">
               Luck (success rate of Jewel of Soul +25%, critical damage rate +5%)
+            </Label>
+          </div>
+
+          {/* Skill Checkbox */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="skill"
+              checked={skill}
+              onChange={(e) => setSkill(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
+            />
+            <Label htmlFor="skill" className="cursor-pointer">
+              Skill
             </Label>
           </div>
 

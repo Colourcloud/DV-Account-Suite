@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
-import { Package, Plus, Trash2, RefreshCw } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Package, Plus, Trash2, RefreshCw, MoreHorizontal } from "lucide-react"
 import { getItemById, ItemData, getItemImagePathById } from "@/lib/items-data"
 import { decodeWarehouseData, positionToGridCoords, WarehouseItemData, convertWarehouseItemsToGrid, decodeExcellentOptions, getItemTypeFromId, encodeWarehouseData, canPlaceItem, placeItemInGrid, gridCoordsToPosition } from "@/lib/warehouse-utils"
 
@@ -50,6 +51,8 @@ interface PendingItem {
   level: number
   durability: number
   luck: boolean
+  skill: boolean
+  option: number
 }
 
 interface WarehouseGridProps {
@@ -71,6 +74,10 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
   const [error, setError] = useState<string | null>(null)
   const [pendingItem, setPendingItem] = useState<PendingItem | null>(null)
   const [isPlacingItem, setIsPlacingItem] = useState(false)
+  const [contextMenuOpen, setContextMenuOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<WarehouseItem | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
 
   // Initialize empty grid
   useEffect(() => {
@@ -209,11 +216,14 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
         <HoverCardTrigger asChild>
           <div className="w-full h-full">
             {isTopLeft && (
-              <div className={`
-                w-full h-full border border-gray-800 p-0.5 bg-[nd#010020]
-                flex flex-col items-center justify-center cursor-pointer
-                hover:shadow-md transition-shadow relative
-              `}>
+              <div 
+                className={`
+                  w-full h-full border border-gray-800 p-0.5 bg-[nd#010020]
+                  flex flex-col items-center justify-center cursor-pointer
+                  hover:shadow-md transition-shadow relative
+                `}
+                onContextMenu={(e) => handleItemRightClick(e, item)}
+              >
                 <img 
                   src={getItemImagePathById(item.id)} 
                   alt={item.name}
@@ -371,11 +381,11 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           group: Math.floor(pendingItem.id / 512),
           index: pendingItem.id % 512,
           slot: 0,
-          skill: 0,
+          skill: pendingItem.skill ? 1 : 0,
           width: pendingItem.width,
           height: pendingItem.height,
           serial: serial,
-          option: 0,
+          option: pendingItem.option,
           drop: 1,
           name: pendingItem.name,
           level: pendingItem.level,
@@ -463,12 +473,137 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
     setIsPlacingItem(false)
   }
 
+  // Function to handle right-click on item
+  const handleItemRightClick = (e: React.MouseEvent, item: WarehouseItem) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setSelectedItem(item)
+    setContextMenuPosition({ x: e.clientX, y: e.clientY })
+    setContextMenuOpen(true)
+  }
+
+  // Function to delete an item
+  const handleDeleteItem = async () => {
+    if (!selectedItem) return
+
+    try {
+      console.log('Deleting item:', selectedItem)
+      console.log('Current warehouse items count:', warehouseItems.length)
+      
+      // Remove item from warehouse items using multiple criteria to ensure we get the right item
+      const updatedItems = warehouseItems.filter(item => {
+        // Use position and item ID to uniquely identify the item
+        const isMatch = (
+          item.position && 
+          selectedItem.position &&
+          item.position.x === selectedItem.position.x &&
+          item.position.y === selectedItem.position.y &&
+          item.id === selectedItem.id &&
+          item.level === selectedItem.level
+        )
+        console.log('Item match check:', {
+          item: { id: item.id, position: item.position, level: item.level },
+          selected: { id: selectedItem.id, position: selectedItem.position, level: selectedItem.level },
+          isMatch
+        })
+        return !isMatch
+      })
+      
+      console.log('Updated items count:', updatedItems.length)
+      setWarehouseItems(updatedItems)
+
+      // Update the grid
+      const newGrid: (WarehouseItem | null)[][] = []
+      for (let y = 0; y < WAREHOUSE_HEIGHT; y++) {
+        newGrid[y] = new Array(WAREHOUSE_WIDTH).fill(null)
+      }
+
+      // Place remaining items in grid
+      updatedItems.forEach(item => {
+        if (item.position) {
+          const { x, y } = item.position
+          for (let dy = 0; dy < item.height; dy++) {
+            for (let dx = 0; dx < item.width; dx++) {
+              if (y + dy < WAREHOUSE_HEIGHT && x + dx < WAREHOUSE_WIDTH) {
+                newGrid[y + dy][x + dx] = item
+              }
+            }
+          }
+        }
+      })
+
+      setGrid(newGrid)
+
+      // Convert to warehouse data format and encode
+      const warehouseDataItems: WarehouseItemData[] = updatedItems.map(item => ({
+        position: gridCoordsToPosition(item.position!.x, item.position!.y),
+        itemId: item.id,
+        level: item.level,
+        durability: item.durability,
+        skill: item.skill,
+        luck: item.luck,
+        option: item.option,
+        excellentOption: item.excellentOption,
+        ancientOption: 0,
+        serial: 0,
+        serial2: 0
+      }))
+
+      const encodedData = encodeWarehouseData(warehouseDataItems)
+      console.log('Encoded warehouse data after deletion:', encodedData.substring(0, 100))
+      
+      // Notify parent component of the update
+      if (onWarehouseUpdate) {
+        onWarehouseUpdate(encodedData)
+      }
+
+      // Update database
+      try {
+        console.log('Sending warehouse update to database...')
+        const response = await fetch(`/api/characters/${characterName}/warehouse`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ warehouseData: encodedData }),
+        })
+
+        if (response.ok) {
+          console.log('Warehouse data updated after deletion successfully')
+        } else {
+          console.error('Failed to update warehouse data after deletion:', response.status, response.statusText)
+        }
+      } catch (error) {
+        console.error('Error updating warehouse data:', error)
+      }
+
+      // Close context menu and reset state
+      setContextMenuOpen(false)
+      setSelectedItem(null)
+      setShowDeleteConfirm(false)
+    } catch (error) {
+      console.error('Error deleting item:', error)
+    }
+  }
+
   // Expose the startItemPlacement function to parent component
   useEffect(() => {
     if (onItemPlacementReady) {
       onItemPlacementReady(startItemPlacement)
     }
   }, [onItemPlacementReady, startItemPlacement])
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setContextMenuOpen(false)
+    }
+
+    if (contextMenuOpen) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [contextMenuOpen])
 
   if (isLoading) {
     return (
@@ -623,6 +758,56 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           </div>
         </div>
       </CardContent>
+
+      {/* Context Menu */}
+      {contextMenuOpen && selectedItem && (
+        <div 
+          className="fixed z-50 bg-background border rounded-md shadow-lg p-1 min-w-[160px]"
+          style={{
+            left: contextMenuPosition.x,
+            top: contextMenuPosition.y,
+          }}
+          onMouseLeave={() => setContextMenuOpen(false)}
+        >
+          <div 
+            className="flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-accent rounded-sm text-destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete Item
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && selectedItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">Delete Item</h3>
+            <p className="text-muted-foreground mb-4">
+              Are you sure you want to delete "{selectedItem.name}"? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowDeleteConfirm(false)
+                  setContextMenuOpen(false)
+                  setSelectedItem(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteItem}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   )
 }

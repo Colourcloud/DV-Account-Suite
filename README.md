@@ -2,6 +2,11 @@
 
 A modern web-based account management system for MUonline private servers with a beautiful dashboard UI, dark mode support, and SQL database integration.
 
+## Credits
+
+- DVTeam for providing the emulator
+- SkillRO for providing insight into item structure
+
 ## Features
 
 - 🎨 **Modern UI** - Built with shadcn/ui components and Tailwind CSS
@@ -97,15 +102,6 @@ CREATE TABLE Character (
   -- Add other character fields as needed
 );
 ```
-
-## API Endpoints
-
-- `GET /api/accounts` - Get all accounts with pagination
-- `GET /api/accounts/[username]` - Get specific account
-- `POST /api/accounts` - Create new account
-- `PUT /api/accounts/[username]` - Update account
-- `DELETE /api/accounts/[username]` - Delete account
-- `GET /api/characters` - Get characters by account or stats
 
 ## Features Overview
 

@@ -713,7 +713,9 @@ export default function CharacterPage({ params }: { params: Promise<{ character:
                     height: itemFromDb.height,
                     level: itemData.itemLevel,
                     durability: itemData.durability,
-                    luck: itemData.luck
+                    luck: itemData.luck,
+                    skill: itemData.skill,
+                    option: itemData.option
                   }
                   
                   startItemPlacement(pendingItem)
