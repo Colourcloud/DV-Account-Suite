@@ -42,7 +42,7 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("")
   const [selectedItemId, setSelectedItemId] = useState<string>("")
   const [filteredItems, setFilteredItems] = useState<ItemData[]>([])
-  const [itemLevel, setItemLevel] = useState<string>("0")
+  const [itemLevel, setItemLevel] = useState<string>("1")
   const [luck, setLuck] = useState<boolean>(false)
   const [durability, setDurability] = useState<string>("255")
 
@@ -162,12 +162,12 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
               <Label htmlFor="item-level">Item Level</Label>
               <Select value={itemLevel} onValueChange={setItemLevel}>
                 <SelectTrigger id="item-level" className="w-full">
-                  <SelectValue placeholder="0" />
+                  <SelectValue placeholder="1" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 16 }, (_, i) => (
-                    <SelectItem key={i} value={i.toString()}>
-                      +{i}
+                  {Array.from({ length: 15 }, (_, i) => (
+                    <SelectItem key={i + 1} value={(i + 1).toString()}>
+                      +{i + 1}
                     </SelectItem>
                   ))}
                 </SelectContent>

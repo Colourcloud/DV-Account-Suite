@@ -15,6 +15,7 @@ import Link from "next/link"
 import { getRaceToClass, getClassImage, formatZen } from "@/lib/class-utils"
 import { useToast } from "@/hooks/use-toast"
 import { WarehouseGrid } from "@/components/warehouse-grid"
+import { ItemCreatorForm } from "@/components/item-creator-form"
 
 interface CharacterStats {
   name: string
@@ -648,13 +649,30 @@ export default function CharacterPage({ params }: { params: Promise<{ character:
         </Card>
       </div>
 
-      {/* Warehouse Section */}
-      <div className="mt-6 w-1/2">
-        <WarehouseGrid 
-          accountId={1} // TODO: Get actual account ID from character data
-          characterName={characterData.name}
-          warehouseData={characterData.warehouseData}
-        />
+      {/* Warehouse and Item Creator Section */}
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Warehouse Section */}
+        <div>
+          <WarehouseGrid 
+            accountId={1} // TODO: Get actual account ID from character data
+            characterName={characterData.name}
+            warehouseData={characterData.warehouseData as string}
+          />
+        </div>
+
+        {/* Item Creator Section */}
+        <div>
+          <ItemCreatorForm 
+            onItemCreate={(itemData) => {
+              // TODO: Implement item creation logic
+              console.log('Item created:', itemData)
+              toast({
+                title: "Item Created",
+                description: `${itemData.itemName} (+${itemData.itemLevel}) has been created.`,
+              })
+            }}
+          />
+        </div>
       </div>
     </DashboardLayout>
   )

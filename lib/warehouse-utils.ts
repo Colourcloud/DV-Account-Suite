@@ -178,7 +178,69 @@ export function decodeExcellentOptions(excellentValue: number, itemType: 'weapon
     })
   }
   
-  // TODO: Add armor and accessory excellent options when needed
+  // For armor, check each bit flag
+  if (itemType === 'armor') {
+    // Check each bit position (1, 2, 4, 8, 16, 32)
+    const bitFlags = [1, 2, 4, 8, 16, 32]
+    const descriptions = [
+      "Increase the amount of Zen acquired for hunting monsters by 30%",
+      "Increases Defense Success Rate +10%",
+      "Reflect Damage by 5%",
+      "Decreases Damage by 4%",
+      "Increase Maximum Mana by 4%",
+      "Increase Maximum Life by 4%"
+    ]
+    
+    bitFlags.forEach((flag, index) => {
+      if ((excellentValue & flag) === flag) {
+        options.push(descriptions[index])
+      }
+    })
+  }
+  
+  // For accessories, check each bit flag
+  if (itemType === 'accessory') {
+    // Check each bit position (1, 2, 4, 8, 16, 32)
+    const bitFlags = [1, 2, 4, 8, 16, 32]
+    const descriptions = [
+      "Increase Maximum Mana +50",
+      "Increase Maximum Life +50",
+      "Increase Defense Success Rate +10%",
+      "Reflect Damage +5%",
+      "Damage Decrease +4%",
+      "Increase Zen After Hunt +40%"
+    ]
+    
+    bitFlags.forEach((flag, index) => {
+      if ((excellentValue & flag) === flag) {
+        options.push(descriptions[index])
+      }
+    })
+  }
   
   return options
+}
+
+/**
+ * Determines the item type based on the item's category ID
+ * @param itemId - The item ID to determine type for
+ * @returns Item type for excellent options
+ */
+export function getItemTypeFromId(itemId: number): 'weapon' | 'armor' | 'accessory' {
+  // Get the category ID from itemId
+  // ItemId format: (group * 512) + index
+  const categoryId = Math.floor(itemId / 512)
+  
+  // Categories 0-5 are weapons
+  if (categoryId >= 0 && categoryId <= 5) {
+    return 'weapon'
+  }
+  
+  // Categories 6-11 are armor
+  if (categoryId >= 6 && categoryId <= 11) {
+    return 'armor'
+  }
+  
+  // Categories 12+ are accessories
+  return 'accessory'
 }

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Package, Plus, Trash2, RefreshCw } from "lucide-react"
 import { getItemById, ItemData, getItemImagePathById } from "@/lib/items-data"
-import { decodeWarehouseData, positionToGridCoords, WarehouseItemData, convertWarehouseItemsToGrid, decodeExcellentOptions } from "@/lib/warehouse-utils"
+import { decodeWarehouseData, positionToGridCoords, WarehouseItemData, convertWarehouseItemsToGrid, decodeExcellentOptions, getItemTypeFromId } from "@/lib/warehouse-utils"
 
 interface WarehouseItem {
   id: number
@@ -218,7 +218,16 @@ export function WarehouseGrid({ accountId, characterName, warehouseData }: Wareh
             
             {/* Item Name + Level */}
             <div className="text-center text-green-400">
-              <div className="font-semibold text-base flex flex-row items-center gap-1 justify-center">{item.name} <span>+{item.level}</span></div>
+              <div className="font-semibold text-sm flex flex-row items-center gap-1 justify-center">
+                {item.excellentOption > 0 ? (
+                  <>
+                    <span>Excellent</span> {item.name}
+                  </>
+                ) : (
+                  item.name
+                )} 
+                <span>+{item.level}</span>
+              </div>
             </div>
             
             {/* Durability */}
@@ -267,11 +276,11 @@ export function WarehouseGrid({ accountId, characterName, warehouseData }: Wareh
             {/* Excellent Options - only show if item has excellent options */}
             {item.excellentOption > 0 && (
               <div className="">
-                <div className="text-sm font-medium text-center text-purple-600 dark:text-purple-400">
+                <div className="text-sm font-medium text-center text-purple-400">
                   Excellent Options:
                 </div>
-                {decodeExcellentOptions(item.excellentOption, 'weapon').map((option, index) => (
-                  <div key={index} className="text-sm text-purple-500 dark:text-purple-300 text-center font-light">
+                {decodeExcellentOptions(item.excellentOption, getItemTypeFromId(item.id)).reverse().map((option, index) => (
+                  <div key={index} className="text-sm text-blue-400 text-center font-light">
                     {option}
                   </div>
                 ))}
