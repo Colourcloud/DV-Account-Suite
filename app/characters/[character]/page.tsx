@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard/layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,15 +10,36 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ArrowLeft, Save, RotateCcw, Shield, Crown, Zap, Heart, Brain, Users, Coins, Star, Gamepad2 } from "lucide-react"
+import { ArrowLeft, Save, RotateCcw, Shield, Crown, Zap, Heart, Brain, Users, Coins, Star, Gamepad2, Loader2, Ban } from "lucide-react"
 import Link from "next/link"
+import { getRaceToClass, getClassImage, formatZen } from "@/lib/class-utils"
+import { useToast } from "@/hooks/use-toast"
 
 interface CharacterStats {
   name: string
   level: number
+  level_master: number
+  reset: number
+  points: number
+  race: number
+  strength: number
+  agility: number
+  vitality: number
+  energy: number
+  leadership: number
+  money: number
+  ruud_money: number
+  vip_status: number
+  account_name: string
+  email: string
+  blocked: number
+}
+
+interface UICharacterStats {
+  name: string
+  level: number
   masterLevel: number
   resetCount: number
-  grandResetCount: number
   remainingStatPoints: number
   classType: string
   strength: number
@@ -27,8 +48,10 @@ interface CharacterStats {
   energy: number
   command: number
   zenAmount: number
+  ruudAmount: number
   vipStatus: boolean
   isGameMaster: boolean
+  isBanned: boolean
 }
 
 const characterClasses = [
@@ -49,39 +72,141 @@ const characterClasses = [
   "Blue Wizard"
 ]
 
-export default function CharacterPage({ params }: { params: { character: string } }) {
-  // Mock character data - in real app this would come from API
-  const [characterData, setCharacterData] = useState<CharacterStats>({
-    name: "Jaromme",
-    level: 400,
-    masterLevel: 50,
-    resetCount: 5,
-    grandResetCount: 2,
-    remainingStatPoints: 150,
-    classType: "Dark Lord",
-    strength: 2500,
-    agility: 1800,
-    vitality: 2200,
-    energy: 3000,
-    command: 100,
-    zenAmount: 500000000,
-    vipStatus: true,
-    isGameMaster: false
-  })
-
+export default function CharacterPage({ params }: { params: Promise<{ character: string }> }) {
+  const [characterData, setCharacterData] = useState<UICharacterStats | null>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [editedData, setEditedData] = useState<CharacterStats>(characterData)
+  const [editedData, setEditedData] = useState<UICharacterStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const { toast } = useToast()
 
-  const handleInputChange = (field: keyof CharacterStats, value: string | number | boolean) => {
-    setEditedData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+  // Helper function to convert database data to UI format
+  const convertToUIFormat = (dbData: CharacterStats): UICharacterStats => {
+    return {
+      name: dbData.name,
+      level: dbData.level,
+      masterLevel: dbData.level_master,
+      resetCount: dbData.reset,
+      remainingStatPoints: dbData.points,
+      classType: getRaceToClass(dbData.race),
+      strength: dbData.strength,
+      agility: dbData.agility,
+      vitality: dbData.vitality,
+      energy: dbData.energy,
+      command: dbData.leadership,
+      zenAmount: dbData.money,
+      ruudAmount: dbData.ruud_money || 0,
+      vipStatus: dbData.vip_status > 0,
+      isGameMaster: dbData.blocked === 0 && dbData.name.toLowerCase().includes('gm'), // Simple GM detection
+      isBanned: dbData.blocked === 1 // Account is banned
+    }
   }
 
-  const handleSave = () => {
-    setCharacterData(editedData)
-    setIsEditing(false)
+  // Helper function to convert UI data back to database format
+  const convertToDBFormat = (uiData: UICharacterStats): Partial<CharacterStats> => {
+    return {
+      level: uiData.level,
+      level_master: uiData.masterLevel,
+      strength: uiData.strength,
+      agility: uiData.agility,
+      vitality: uiData.vitality,
+      energy: uiData.energy,
+      leadership: uiData.command,
+      points: uiData.remainingStatPoints,
+      money: uiData.zenAmount,
+      ruud_money: uiData.ruudAmount,
+      reset: uiData.resetCount
+    }
+  }
+
+  // Fetch character data on component mount
+  useEffect(() => {
+    const fetchCharacterData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const resolvedParams = await params
+        const response = await fetch(`/api/characters/${resolvedParams.character}`)
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Character not found')
+          }
+          throw new Error('Failed to fetch character data')
+        }
+        
+        const dbData: CharacterStats = await response.json()
+        const uiData = convertToUIFormat(dbData)
+        setCharacterData(uiData)
+        setEditedData(uiData)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCharacterData()
+  }, [params])
+
+  const handleInputChange = (field: keyof UICharacterStats, value: string | number | boolean) => {
+    setEditedData(prev => prev ? ({
+      ...prev,
+      [field]: value
+    }) : null)
+  }
+
+  const handleSave = async () => {
+    if (!editedData) return
+    
+    try {
+      setIsSaving(true)
+      setError(null)
+      
+      const dbData = convertToDBFormat(editedData)
+      const resolvedParams = await params
+      
+      console.log('Saving character data:', {
+        character: resolvedParams.character,
+        dbData,
+        originalData: characterData,
+        editedData
+      })
+      
+      const response = await fetch(`/api/characters/${resolvedParams.character}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dbData),
+      })
+      
+      console.log('Save response status:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Save failed:', errorText)
+        throw new Error(`Failed to save character data: ${response.status} ${errorText}`)
+      }
+      
+      const result = await response.json()
+      console.log('Save successful:', result)
+      
+      setCharacterData(editedData)
+      setIsEditing(false)
+      
+      toast({
+        title: "Success!",
+        description: "Character updated successfully!",
+        variant: "success",
+      })
+    } catch (err) {
+      console.error('Save error:', err)
+      setError(err instanceof Error ? err.message : 'Failed to save changes')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleCancel = () => {
@@ -93,29 +218,43 @@ export default function CharacterPage({ params }: { params: { character: string 
     setEditedData(characterData)
   }
 
-  const formatZen = (amount: number) => {
-    if (amount >= 1000000000) {
-      return `${(amount / 1000000000).toFixed(1)}B`
-    } else if (amount >= 1000000) {
-      return `${(amount / 1000000).toFixed(1)}M`
-    } else if (amount >= 1000) {
-      return `${(amount / 1000).toFixed(1)}K`
-    }
-    return amount.toString()
+  // Loading state
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading character data...</span>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
   }
 
-  const getClassImage = (className: string) => {
-    const classMap: { [key: string]: string } = {
-      "Dark Knight": "/class/knight.jpg",
-      "Dark Wizard": "/class/white_wizard.jpg",
-      "Fairy Elf": "/class/elf.jpg",
-      "Magic Gladiator": "/class/creator.jpg",
-      "Dark Lord": "/class/darklord.jpg",
-      "Summoner": "/class/summoner.jpg",
-      "Rage Fighter": "/class/illusion.jpg",
-      "Grow Lancer": "/class/lem.jpg"
-    }
-    return classMap[className] || "/class/knight.jpg"
+  // Error state
+  if (error || !characterData) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <div className="text-red-500 mb-4">
+                  <Shield className="h-12 w-12 mx-auto" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Error Loading Character</h3>
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <Button onClick={() => window.location.reload()}>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
@@ -137,26 +276,60 @@ export default function CharacterPage({ params }: { params: { character: string 
         <div className="flex items-center space-x-2">
           {isEditing ? (
             <>
-              <Button variant="outline" onClick={handleCancel}>
+              <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
                 <RotateCcw className="mr-2 h-4 w-4" />
                 Cancel
               </Button>
-              <Button onClick={handleSave}>
-                <Save className="mr-2 h-4 w-4" />
-                Save Changes
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </Button>
             </>
           ) : (
-            <Button onClick={() => setIsEditing(true)}>
+            <Button 
+              onClick={() => {
+                setIsEditing(true)
+                setError(null)
+              }}
+              disabled={characterData.isBanned}
+            >
               <Gamepad2 className="mr-2 h-4 w-4" />
-              Edit Character
+              {characterData.isBanned ? 'Edit Disabled' : 'Edit Character'}
             </Button>
           )}
         </div>
       </div>
 
+      {/* Banned Account Warning */}
+      {characterData.isBanned && (
+        <Card className="mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-2 text-red-700 dark:text-red-300">
+              <Ban className="h-4 w-4" />
+              <span className="font-medium">This character belongs to a banned account. Editing is restricted.</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <Card className="mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-2 text-red-700 dark:text-red-300">
+              <Shield className="h-4 w-4" />
+              <span className="font-medium">{error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Character Header */}
-      <Card className="mb-6">
+      <Card className="mb-6 pt-0">
         <CardContent className="pt-6">
           <div className="flex items-center space-x-4">
             <Avatar className="h-16 w-16">
@@ -178,9 +351,18 @@ export default function CharacterPage({ params }: { params: { character: string 
                     GM
                   </Badge>
                 )}
+                {characterData.isBanned && (
+                  <Badge variant="destructive">
+                    <Ban className="w-3 h-3 mr-1" />
+                    Banned
+                  </Badge>
+                )}
               </div>
               <p className="text-muted-foreground">
                 Level {characterData.level} • Master Level {characterData.masterLevel} • {characterData.classType}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Resets: {characterData.resetCount || 0}
               </p>
             </div>
           </div>
@@ -206,7 +388,7 @@ export default function CharacterPage({ params }: { params: { character: string 
                 <Input
                   id="level"
                   type="number"
-                  value={isEditing ? editedData.level : characterData.level}
+                  value={isEditing ? editedData?.level || 0 : characterData.level}
                   onChange={(e) => handleInputChange('level', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                   min="1"
@@ -218,7 +400,7 @@ export default function CharacterPage({ params }: { params: { character: string 
                 <Input
                   id="masterLevel"
                   type="number"
-                  value={isEditing ? editedData.masterLevel : characterData.masterLevel}
+                  value={isEditing ? editedData?.masterLevel || 0 : characterData.masterLevel}
                   onChange={(e) => handleInputChange('masterLevel', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                   min="0"
@@ -232,19 +414,8 @@ export default function CharacterPage({ params }: { params: { character: string 
                 <Input
                   id="resetCount"
                   type="number"
-                  value={isEditing ? editedData.resetCount : characterData.resetCount}
+                  value={isEditing ? editedData?.resetCount || 0 : characterData.resetCount}
                   onChange={(e) => handleInputChange('resetCount', parseInt(e.target.value) || 0)}
-                  disabled={!isEditing}
-                  min="0"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="grandResetCount">Grand Reset Count</Label>
-                <Input
-                  id="grandResetCount"
-                  type="number"
-                  value={isEditing ? editedData.grandResetCount : characterData.grandResetCount}
-                  onChange={(e) => handleInputChange('grandResetCount', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                   min="0"
                 />
@@ -253,7 +424,7 @@ export default function CharacterPage({ params }: { params: { character: string 
             <div className="space-y-2">
               <Label htmlFor="classType">Class Type</Label>
               <Select
-                value={isEditing ? editedData.classType : characterData.classType}
+                value={isEditing ? editedData?.classType || characterData.classType : characterData.classType}
                 onValueChange={(value) => handleInputChange('classType', value)}
                 disabled={!isEditing}
               >
@@ -290,7 +461,7 @@ export default function CharacterPage({ params }: { params: { character: string 
                 <Input
                   id="strength"
                   type="number"
-                  value={isEditing ? editedData.strength : characterData.strength}
+                  value={isEditing ? editedData?.strength || 0 : characterData.strength}
                   onChange={(e) => handleInputChange('strength', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                   min="0"
@@ -301,7 +472,7 @@ export default function CharacterPage({ params }: { params: { character: string 
                 <Input
                   id="agility"
                   type="number"
-                  value={isEditing ? editedData.agility : characterData.agility}
+                  value={isEditing ? editedData?.agility || 0 : characterData.agility}
                   onChange={(e) => handleInputChange('agility', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                   min="0"
@@ -314,7 +485,7 @@ export default function CharacterPage({ params }: { params: { character: string 
                 <Input
                   id="vitality"
                   type="number"
-                  value={isEditing ? editedData.vitality : characterData.vitality}
+                  value={isEditing ? editedData?.vitality || 0 : characterData.vitality}
                   onChange={(e) => handleInputChange('vitality', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                   min="0"
@@ -325,7 +496,7 @@ export default function CharacterPage({ params }: { params: { character: string 
                 <Input
                   id="energy"
                   type="number"
-                  value={isEditing ? editedData.energy : characterData.energy}
+                  value={isEditing ? editedData?.energy || 0 : characterData.energy}
                   onChange={(e) => handleInputChange('energy', parseInt(e.target.value) || 0)}
                   disabled={!isEditing}
                   min="0"
@@ -337,7 +508,7 @@ export default function CharacterPage({ params }: { params: { character: string 
               <Input
                 id="command"
                 type="number"
-                value={isEditing ? editedData.command : characterData.command}
+                  value={isEditing ? editedData?.command || 0 : characterData.command}
                 onChange={(e) => handleInputChange('command', parseInt(e.target.value) || 0)}
                 disabled={!isEditing}
                 min="0"
@@ -348,7 +519,7 @@ export default function CharacterPage({ params }: { params: { character: string 
               <Input
                 id="remainingStatPoints"
                 type="number"
-                value={isEditing ? editedData.remainingStatPoints : characterData.remainingStatPoints}
+                  value={isEditing ? editedData?.remainingStatPoints || 0 : characterData.remainingStatPoints}
                 onChange={(e) => handleInputChange('remainingStatPoints', parseInt(e.target.value) || 0)}
                 disabled={!isEditing}
                 min="0"
@@ -374,7 +545,7 @@ export default function CharacterPage({ params }: { params: { character: string 
               <Input
                 id="zenAmount"
                 type="number"
-                value={isEditing ? editedData.zenAmount : characterData.zenAmount}
+                  value={isEditing ? editedData?.zenAmount || 0 : characterData.zenAmount}
                 onChange={(e) => handleInputChange('zenAmount', parseInt(e.target.value) || 0)}
                 disabled={!isEditing}
                 min="0"
@@ -383,6 +554,22 @@ export default function CharacterPage({ params }: { params: { character: string 
               />
               <p className="text-xs text-muted-foreground">
                 Current: {formatZen(characterData.zenAmount)} • Max: 2B
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ruudAmount">Ruud Amount</Label>
+              <Input
+                id="ruudAmount"
+                type="number"
+                value={isEditing ? editedData?.ruudAmount || 0 : characterData.ruudAmount}
+                onChange={(e) => handleInputChange('ruudAmount', parseInt(e.target.value) || 0)}
+                disabled={!isEditing}
+                min="0"
+                max="999999999"
+                placeholder="Max: 999,999,999"
+              />
+              <p className="text-xs text-muted-foreground">
+                Current: {formatZen(characterData.ruudAmount)} • Max: 999M
               </p>
             </div>
             <Separator />
@@ -395,7 +582,7 @@ export default function CharacterPage({ params }: { params: { character: string 
                   </p>
                 </div>
                 <Select
-                  value={isEditing ? editedData.vipStatus.toString() : characterData.vipStatus.toString()}
+                  value={isEditing ? editedData?.vipStatus.toString() || characterData.vipStatus.toString() : characterData.vipStatus.toString()}
                   onValueChange={(value) => handleInputChange('vipStatus', value === 'true')}
                   disabled={!isEditing}
                 >
@@ -416,7 +603,7 @@ export default function CharacterPage({ params }: { params: { character: string 
                   </p>
                 </div>
                 <Select
-                  value={isEditing ? editedData.isGameMaster.toString() : characterData.isGameMaster.toString()}
+                  value={isEditing ? editedData?.isGameMaster.toString() || characterData.isGameMaster.toString() : characterData.isGameMaster.toString()}
                   onValueChange={(value) => handleInputChange('isGameMaster', value === 'true')}
                   disabled={!isEditing}
                 >

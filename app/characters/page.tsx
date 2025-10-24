@@ -8,103 +8,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Filter, UserPlus, Edit, Trash2, Shield, Ban, CheckCircle, Gamepad2 } from "lucide-react"
+import { CharacterManager } from "@/lib/database"
+import { getRaceToClass, getClassImage, getWorldName } from "@/lib/class-utils"
+import Link from "next/link"    
 
-export default function CharactersPage() {
-  const characters = [
-    {
-      id: 1,
-      name: "DarkKnight",
-      account: "admin",
-      class: "Dark Knight",
-      level: 85,
-      status: "online",
-      map: "Lorencia",
-      lastLogin: "2 hours ago",
-      created: "2024-01-15",
-      vip: true
-    },
-    {
-      id: 2,
-      name: "TestMage",
-      account: "admin",
-      class: "Fairy Elf",
-      level: 45,
-      status: "offline",
-      map: "Devias",
-      lastLogin: "1 day ago",
-      created: "2024-02-10",
-      vip: false
-    },
-    {
-      id: 3,
-      name: "AdminChar",
-      account: "admin",
-      class: "Summoner",
-      level: 99,
-      status: "online",
-      map: "Arena",
-      lastLogin: "30 minutes ago",
-      created: "2023-12-01",
-      vip: true
-    },
-    {
-      id: 4,
-      name: "Newbie",
-      account: "admin",
-      class: "Dark Knight",
-      level: 12,
-      status: "offline",
-      map: "Lorencia",
-      lastLogin: "5 hours ago",
-      created: "2024-03-01",
-      vip: false
-    },
-    {
-      id: 4,
-      name: "Jaromme",
-      account: "admin",
-      class: "Dark Lord",
-      level: 400,
-      status: "offline",
-      map: "Lorencia",
-      lastLogin: "5 hours ago",
-      created: "2024-03-01",
-      vip: false
-    }
-  ]
+export default async function CharactersPage() {
+  // Fetch characters and stats from database
+  const characters = await CharacterManager.getAllCharacters(100, 0) as any[]
+  const stats = await CharacterManager.getCharacterStats()
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "online":
-        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="w-3 h-3 mr-1" />Online</Badge>
-      case "offline":
-        return <Badge variant="secondary">Offline</Badge>
-      case "banned":
-        return <Badge variant="destructive"><Ban className="w-3 h-3 mr-1" />Banned</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
+  const getStatusBadge = (online: number, blocked: number) => {
+    if (blocked === 1) {
+      return <Badge variant="destructive"><Ban className="w-3 h-3 mr-1" />Banned</Badge>
     }
+    if (online === 1) {
+      return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="w-3 h-3 mr-1" />Online</Badge>
+    }
+    return <Badge variant="secondary">Offline</Badge>
   }
 
-  const getClassImage = (className: string) => {
-    switch (className) {
-      case "Dark Knight":
-        return "/class/knight.jpg"
-      case "Dark Wizard":
-        return "/class/dark-wizard.jpg"
-      case "Fairy Elf":
-        return "/class/elf.jpg"
-      case "Magic Gladiator":
-        return "/class/magic-gladiator.jpg"
-      case "Dark Lord":
-        return "/class/darklord.jpg"
-      case "Summoner":
-        return "/class/summoner.jpg"
-      case "Rage Fighter":
-        return "/class/rage-fighter.jpg"
-      default:
-        return "/class/default.jpg"
+  const getCharacterRowStyle = (blocked: number) => {
+    if (blocked === 1) {
+      return "opacity-60 bg-red-50/30 dark:bg-red-950/20"
     }
+    return ""
   }
 
   return (
@@ -131,7 +58,7 @@ export default function CharactersPage() {
             <Gamepad2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
         <Card>
@@ -140,7 +67,7 @@ export default function CharactersPage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
+            <div className="text-2xl font-bold">{stats.online}</div>
           </CardContent>
         </Card>
         <Card>
@@ -149,7 +76,7 @@ export default function CharactersPage() {
             <Ban className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0</div>
+            <div className="text-2xl font-bold">{stats.banned}</div>
           </CardContent>
         </Card>
         <Card>
@@ -158,7 +85,7 @@ export default function CharactersPage() {
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
+            <div className="text-2xl font-bold">{stats.vip}</div>
           </CardContent>
         </Card>
       </div>
@@ -224,63 +151,80 @@ export default function CharactersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {characters.map((character) => (
-                <TableRow key={character.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <img 
-                        src={getClassImage(character.class)} 
-                        alt={character.class}
-                        className="h-8 w-8 rounded-full object-cover"
-                      />
-                      <div>
-                        <div className="font-medium">{character.name}</div>
-                        <div className="text-sm text-muted-foreground">ID: {character.id}</div>
+              {characters.map((character: any) => {
+                const className = getRaceToClass(character.race)
+                const worldName = getWorldName(character.world)
+                
+                return (
+                  <TableRow key={character.guid} className={getCharacterRowStyle(character.blocked)}>
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <img 
+                          src={getClassImage(className)} 
+                          alt={className}
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                        <div>
+                          <div className="font-medium flex items-center space-x-2">
+                            <span>{character.name}</span>
+                            {character.blocked === 1 && (
+                              <Ban className="h-3 w-3 text-red-500" />
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">ID: {character.guid}</div>
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{character.account}</div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{character.class}</span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <span className="font-medium">{character.level}</span>
-                      <span className="text-sm text-muted-foreground ml-1">lvl</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(character.status)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{character.map}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {character.vip ? (
-                      <Badge variant="default" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                        VIP
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <Button variant="ghost" size="icon">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon">
-                        <Shield className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium flex items-center space-x-2">
+                        <span>{character.account_name}</span>
+                        {character.blocked === 1 && (
+                          <Ban className="h-3 w-3 text-red-500" />
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">{className}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <span className="font-medium">{character.level}</span>
+                        <span className="text-sm text-muted-foreground ml-1">lvl</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(character.online, character.blocked)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{worldName}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {character.vip_status && character.vip_status > 0 ? (
+                        <Badge variant="default" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                          VIP
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                      <Link href={`/characters/${character.name.toLowerCase()}`}>
+                        <Button variant="ghost" size="icon">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        </Link>
+                        <Button variant="ghost" size="icon">
+                          <Shield className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </CardContent>

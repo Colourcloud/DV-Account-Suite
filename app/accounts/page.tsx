@@ -19,68 +19,40 @@ export default async function AccountsPage() {
     banned: 0
   }
 
+  // Fetch accounts data from database
+  let accounts: any[] = []
+  let error: string | null = null
+
   try {
     stats = await AccountManager.getAccountStats()
-  } catch (error) {
-    console.error('Error fetching account stats:', error)
+    accounts = await AccountManager.getAllAccounts(50, 0) // Get first 50 accounts
+  } catch (err) {
+    console.error('Error fetching account data:', err)
+    error = 'Failed to load account data'
   }
-  const accounts = [
-    {
-      id: 1,
-      username: "player123",
-      email: "player123@example.com",
-      status: "active",
-      level: 85,
-      characters: 3,
-      lastLogin: "2 hours ago",
-      created: "2024-01-15",
-      vip: true
-    },
-    {
-      id: 2,
-      username: "testuser",
-      email: "test@example.com",
-      status: "banned",
-      level: 45,
-      characters: 1,
-      lastLogin: "1 day ago",
-      created: "2024-02-10",
-      vip: false
-    },
-    {
-      id: 3,
-      username: "admin",
-      email: "admin@muonline.com",
-      status: "active",
-      level: 99,
-      characters: 5,
-      lastLogin: "30 minutes ago",
-      created: "2023-12-01",
-      vip: true
-    },
-    {
-      id: 4,
-      username: "newbie",
-      email: "newbie@example.com",
-      status: "active",
-      level: 12,
-      characters: 1,
-      lastLogin: "5 hours ago",
-      created: "2024-03-01",
-      vip: false
-    }
-  ]
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="w-3 h-3 mr-1" />Active</Badge>
-      case "banned":
-        return <Badge variant="destructive"><Ban className="w-3 h-3 mr-1" />Banned</Badge>
-      case "inactive":
-        return <Badge variant="secondary">Inactive</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
+  const getStatusBadge = (blocked: number) => {
+    if (blocked === 0) {
+      return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="w-3 h-3 mr-1" />Active</Badge>
+    } else {
+      return <Badge variant="destructive"><Ban className="w-3 h-3 mr-1" />Banned</Badge>
+    }
+  }
+
+  const getAccountRowStyle = (blocked: number) => {
+    if (blocked === 1) {
+      return "opacity-60 bg-red-50/30 dark:bg-red-950/20"
+    }
+    return ""
+  }
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "Never"
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString()
+    } catch {
+      return "Invalid Date"
     }
   }
 
@@ -187,31 +159,46 @@ export default async function AccountsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {accounts.map((account) => (
-                <TableRow key={account.id}>
+              {accounts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <div className="flex flex-col items-center space-y-2">
+                      <Shield className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-muted-foreground">No accounts found</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                accounts.map((account: any) => (
+                <TableRow key={account.guid} className={getAccountRowStyle(account.blocked)}>
                   <TableCell>
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={`/avatars/${account.username}.png`} />
-                        <AvatarFallback>{account.username.charAt(0).toUpperCase()}</AvatarFallback>
+                        <AvatarImage src={`/avatars/${account.account}.png`} />
+                        <AvatarFallback>{account.account?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{account.username}</div>
-                        <div className="text-sm text-muted-foreground">{account.email}</div>
+                        <div className="font-medium flex items-center space-x-2">
+                          <span>{account.account}</span>
+                          {account.blocked === 1 && (
+                            <Ban className="h-3 w-3 text-red-500" />
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">{account.email || 'No email'}</div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(account.status)}
+                    {getStatusBadge(account.blocked)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{account.characters} chars</Badge>
+                    <Badge variant="outline">{account.character_count || 0} chars</Badge>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {account.lastLogin}
+                    {formatDate(account.last_login)}
                   </TableCell>
                   <TableCell>
-                    {account.vip ? (
+                    {account.vip_status > 0 ? (
                       <Badge variant="default" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                         VIP
                       </Badge>
@@ -233,11 +220,24 @@ export default async function AccountsPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Error Display */}
+      {error && (
+        <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-2 text-red-700 dark:text-red-300">
+              <Ban className="h-4 w-4" />
+              <span className="font-medium">{error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </DashboardLayout>
   )
 }
