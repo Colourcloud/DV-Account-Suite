@@ -2,6 +2,12 @@
 
 A modern web-based account management system for MUonline private servers with a beautiful dashboard UI, dark mode support, and SQL database integration.
 
+// To add an image (such as a logo or screenshot) for GitHub, upload your image to your repository (for example, in a `public` or `assets` folder).
+// Then, link to it in your README using Markdown like this:
+
+// Example:
+![Dashboard Screenshot](./public/dashboard.png)
+
 ## Credits
 
 - DVTeam for providing the emulator
