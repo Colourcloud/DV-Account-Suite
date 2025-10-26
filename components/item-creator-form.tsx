@@ -77,6 +77,8 @@ interface ItemCreatorFormProps {
     itemLevel: number
     luck: boolean
     skill: boolean
+    masterySetItem: boolean
+    masteryBonus: string
     durability: number
     option: number
     selectedOptions: boolean[]
@@ -93,6 +95,7 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
   const [itemLevel, setItemLevel] = useState<string>("1")
   const [luck, setLuck] = useState<boolean>(false)
   const [skill, setSkill] = useState<boolean>(false)
+  const [masterySetItem, setMasterySetItem] = useState<boolean>(false)
   const [durability, setDurability] = useState<string>("255")
   const [option, setOption] = useState<string>("0")
   const [selectedOptions, setSelectedOptions] = useState<boolean[]>([false, false, false, false, false, false])
@@ -108,6 +111,9 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
   // Wing Options state
   const [wing5thOption1, setWing5thOption1] = useState<string>("254")
   const [wing5thOption2, setWing5thOption2] = useState<string>("254")
+  
+  // Mastery Bonus state
+  const [masteryBonus, setMasteryBonus] = useState<string>("0")
   
   // Current tab state
   const [currentTab, setCurrentTab] = useState<string>("weapon")
@@ -210,6 +216,8 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
         itemLevel: parseInt(itemLevel),
         luck: luck,
         skill: skill,
+        masterySetItem: masterySetItem,
+        masteryBonus: masteryBonus,
         durability: parseInt(durability),
         option: parseInt(option),
         selectedOptions: selectedOptions,
@@ -219,18 +227,7 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
       }
       
       // Generate the item code string
-      const itemCode = `{${itemData.categoryGroup};${itemData.itemId};0;${itemData.itemLevel};0;${itemData.option};${itemData.durability};0;${itemData.luck ? 1 : 0};${itemData.skill ? 1 : 0};7;${calculatedOptionValue};0;0;0;65535;65535;65535;65535;65535;255;0;0;0;0;0;0;0;0;0;255;255;255;255;255;255;0;0;${wing5thOption1};${wing5thOption2};254;254}`
-      
-      // Debug output
-      console.log("=== NEW ITEM CREATED ===")
-      console.log("Item Data:", itemData)
-      console.log("Selected Options:", selectedOptions)
-      console.log("Calculated Option Value (12th param):", calculatedOptionValue)
-      console.log("Wing 5th Option 1 (38th param):", wing5thOption1)
-      console.log("Wing 5th Option 2 (39th param):", wing5thOption2)
-      console.log("Generated Item Code:")
-      console.log(itemCode)
-      console.log("=========================")
+      const itemCode = `{${itemData.categoryGroup};${itemData.itemId};0;${itemData.itemLevel};0;${itemData.option};${itemData.durability};0;${itemData.skill ? 1 : 0};${itemData.luck ? 1 : 0};7;${calculatedOptionValue};${itemData.masterySetItem ? 9 : 0};0;0;65535;65535;65535;65535;65535;${itemData.masterySetItem ? masteryBonus : 0};0;0;0;0;0;0;0;0;0;255;255;255;255;255;255;0;0;${wing5thOption1};${wing5thOption2};254;254}`
       
       onItemCreate(itemData)
     }
@@ -392,6 +389,37 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
               Skill
             </Label>
           </div>
+
+          {/* Mastery Set Item Checkbox */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="masterySetItem"
+              checked={masterySetItem}
+              onChange={(e) => setMasterySetItem(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
+            />
+            <Label htmlFor="masterySetItem" className="cursor-pointer">
+              Mastery Set Item
+            </Label>
+          </div>
+
+          {/* Mastery Bonus Dropdown - Only show when Mastery Set Item is checked */}
+          {masterySetItem && (
+            <div className="space-y-2">
+              <Label htmlFor="mastery-bonus">Mastery Bonus</Label>
+              <Select value={masteryBonus} onValueChange={setMasteryBonus}>
+                <SelectTrigger id="mastery-bonus" className="w-full">
+                  <SelectValue placeholder="Select mastery bonus..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1: +7 Stats, 25 Damage Decrease</SelectItem>
+                  <SelectItem value="2">2: +7 Stats, 50 Damage Decrease</SelectItem>
+                  <SelectItem value="3">3: +15 Stats, 75 Damage Decrease</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Additional Options Tabs */}
           <div className="space-y-4 border-t py-2 mt-6">

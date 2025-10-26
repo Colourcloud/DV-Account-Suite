@@ -17,6 +17,7 @@ export interface WarehouseItemData {
   ancientOption: number
   serial: number
   serial2: number
+  masteryBonus?: string
   wing5thOption1?: string
   wing5thOption2?: string
 }
@@ -100,6 +101,7 @@ function parseItemFromValues(values: number[]): WarehouseItemData | null {
       ancientOption: values[12],     // 13: Ancient Option
       serial: values[3],             // 4: Serial
       serial2: values[4],            // 5: Serial (second)
+      masteryBonus: values.length > 20 ? values[20].toString() : "0",  // 21: Mastery Bonus
       wing5thOption1: values.length > 38 ? values[38].toString() : "254",  // 39: Wing 5th Option 1
       wing5thOption2: values.length > 39 ? values[39].toString() : "254"   // 40: Wing 5th Option 2
     }
@@ -149,6 +151,7 @@ export function convertWarehouseItemsToGrid(warehouseItems: WarehouseItemData[])
     excellentOption: item.excellentOption,
     ancientOption: item.ancientOption,
     serial: item.serial,
+    masteryBonus: item.masteryBonus,
     wing5thOption1: item.wing5thOption1,
     wing5thOption2: item.wing5thOption2,
     // Add default dimensions - these will be overridden by item data from database
@@ -310,8 +313,8 @@ export function encodeWarehouseData(items: WarehouseItemData[]): string {
 
     // Convert items to the semicolon-separated format
     const itemStrings = items.map(item => {
-      // Create the 42-element array with the important first 15 values and padding
-      const values = new Array(42).fill(0)
+      // Create the 43-element array with the important first 15 values and padding
+      const values = new Array(43).fill(0)
       
       // Important first 15 values
       values[0] = item.position        // 0: Slot Position
@@ -336,7 +339,7 @@ export function encodeWarehouseData(items: WarehouseItemData[]): string {
       values[17] = 65535               // 17: Standard padding
       values[18] = 65535               // 18: Standard padding
       values[19] = 65535               // 19: Standard padding
-      values[20] = 255                 // 20: Standard padding
+      values[20] = parseInt(item.masteryBonus || '0')  // 20: Mastery Bonus
       values[21] = 0                   // 21: Standard padding
       values[22] = 0                   // 22: Standard padding
       values[23] = 0                   // 23: Standard padding
@@ -358,6 +361,7 @@ export function encodeWarehouseData(items: WarehouseItemData[]): string {
       values[39] = parseInt(item.wing5thOption2 || '254')  // 40: Wing 5th Option 2
       values[40] = 254                 // 41: Standard padding
       values[41] = 254                 // 42: Standard padding
+      values[42] = 254                 // 43: Standard padding
       
       return `{${values.join(';')}}`
     })

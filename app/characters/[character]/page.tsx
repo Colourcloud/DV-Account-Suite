@@ -715,8 +715,11 @@ export default function CharacterPage({ params }: { params: Promise<{ character:
                     durability: itemData.durability,
                     luck: itemData.luck,
                     skill: itemData.skill,
+                    masterySetItem: itemData.masterySetItem,
+                    masteryBonus: itemData.masteryBonus,
                     option: itemData.option,
                     excellentOption: itemData.calculatedOptionValue,
+                    ancientOption: itemData.masterySetItem ? 9 : 0,
                     wing5thOption1: itemData.wing5thOption1,
                     wing5thOption2: itemData.wing5thOption2
                   }

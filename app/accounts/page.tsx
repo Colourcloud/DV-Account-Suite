@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Filter, UserPlus, Edit, Trash2, Shield, Ban, CheckCircle } from "lucide-react"
 import { AccountManager } from "@/lib/database"
+import Link from "next/link"
 
 export default async function AccountsPage() {
   // Fetch account statistics from database
@@ -25,7 +26,7 @@ export default async function AccountsPage() {
 
   try {
     stats = await AccountManager.getAccountStats()
-    accounts = await AccountManager.getAllAccounts(50, 0) // Get first 50 accounts
+    accounts = await AccountManager.getAllAccounts(50, 0) as any[] // Get first 50 accounts
   } catch (err) {
     console.error('Error fetching account data:', err)
     error = 'Failed to load account data'
@@ -208,9 +209,11 @@ export default async function AccountsPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end space-x-2">
+                      <Link href={`/accounts/${account.account}`}>
                       <Button variant="ghost" size="icon">
                         <Edit className="h-4 w-4" />
                       </Button>
+                      </Link>
                       <Button variant="ghost" size="icon">
                         <Shield className="h-4 w-4" />
                       </Button>

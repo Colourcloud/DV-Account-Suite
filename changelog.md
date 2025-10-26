@@ -4,6 +4,8 @@
 - Made some UI improvments to the warehouse view to better match MU
 - Added 5th wing options to the item creator
 - Added Harmony Options to the item creator
+- Mastery Set items added to the item creator
+
 
 # [v0.0.2]
 - Added warehouse inventory decoder for Base64-encoded item data

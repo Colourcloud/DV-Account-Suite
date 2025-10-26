@@ -39,6 +39,8 @@ interface WarehouseItem {
   classes: number[]
   luck: number
   excellentOption: number
+  ancientOption: number
+  masteryBonus?: string
   wing5thOption1?: string
   wing5thOption2?: string
   position?: { x: number; y: number }
@@ -54,8 +56,11 @@ interface PendingItem {
   durability: number
   luck: boolean
   skill: boolean
+  masterySetItem: boolean
+  masteryBonus: string
   option: number
   excellentOption: number
+  ancientOption: number
   wing5thOption1?: string
   wing5thOption2?: string
 }
@@ -149,15 +154,14 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
             values[11] = item.excellentOption
             values[12] = item.ancientOption
             values[13] = 0
-            values[14] = 0
             // Add padding
             values[15] = 0
             values[16] = 65535
             values[17] = 65535
             values[18] = 65535
             values[19] = 65535
-            values[20] = 65535
-            values[21] = 255
+            values[20] = 0
+            values[21] = 0
             values[22] = 0
             values[23] = 0
             values[24] = 0
@@ -228,7 +232,8 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
               setType: itemData?.setType || item.setType,
               classes: itemData?.classes || item.classes,
               luck: item.luck,
-              excellentOption: item.excellentOption
+              excellentOption: item.excellentOption,
+              masteryBonus: item.masteryBonus
             }
           })
           console.log('Final items:', items)
@@ -438,6 +443,33 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
                 ))}
               </div>
             )}
+
+            {/* Mastery Bonus Option - only show if mastery bonus > 0
+            {item.masteryBonus && parseInt(item.masteryBonus) > 0 && (
+              <div className="">
+                <div className="text-sm font-medium text-center text-purple-400">
+                  Mastery Bonus Option:
+                </div>
+                {parseInt(item.masteryBonus) === 3 && (
+                  <div className="text-sm text-purple-300 text-center font-light">
+                    <div>Increase all stats by +15</div>
+                    <div>Damage Decrease 75</div>
+                  </div>
+                )}
+                {parseInt(item.masteryBonus) === 2 && (
+                  <div className="text-sm text-purple-300 text-center font-light">
+                    <div>Increase all stats by +7</div>
+                    <div>Damage Decrease 50</div>
+                  </div>
+                )}
+                {parseInt(item.masteryBonus) === 1 && (
+                  <div className="text-sm text-purple-300 text-center font-light">
+                    <div>Increase all stats by +7</div>
+                    <div>Damage Decrease 25</div>
+                  </div>
+                )}
+              </div>
+            )} */}
           </div>
         </HoverCardContent>
       </HoverCard>
@@ -498,6 +530,8 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           classes: [1, 1, 1, 1, 1, 1, 1],
           luck: pendingItem.luck ? 1 : 0,
           excellentOption: pendingItem.excellentOption,
+          ancientOption: pendingItem.ancientOption,
+          masteryBonus: pendingItem.masteryBonus,
           wing5thOption1: pendingItem.wing5thOption1,
           wing5thOption2: pendingItem.wing5thOption2,
           position: { x, y }
@@ -523,11 +557,12 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           luck: item.luck,
           option: item.option,
           excellentOption: item.excellentOption,
-          ancientOption: 0,
+          ancientOption: isNewItem ? pendingItem.ancientOption : (item.ancientOption || 0),
           serial: 0, // Set to 0 as requested
           serial2: 0,
-          wing5thOption1: isNewItem ? pendingItem.wing5thOption1 : undefined,
-          wing5thOption2: isNewItem ? pendingItem.wing5thOption2 : undefined
+          masteryBonus: isNewItem ? pendingItem.masteryBonus : (item.masteryBonus || "0"),
+          wing5thOption1: isNewItem ? pendingItem.wing5thOption1 : (item.wing5thOption1 || "254"),
+          wing5thOption2: isNewItem ? pendingItem.wing5thOption2 : (item.wing5thOption2 || "254")
         }
       })
 
@@ -566,10 +601,10 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
         pendingItem.luck ? 1 : 0,    // luck
         pendingItem.option,          // option
         pendingItem.excellentOption, // excellentOption
-        0,                           // ancientOption
+        pendingItem.ancientOption,   // ancientOption (masterySetItem)
         0,                           // unknown
         0,                           // unknown
-        65535, 65535, 65535, 65535, 65535, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, pendingItem.wing5thOption1 || '254', pendingItem.wing5thOption2 || '254', 254, 254 // wing options + padding (43 total)
+        65535, 65535, 65535, 65535, 65535, pendingItem.masterySetItem ? (parseInt(pendingItem.masteryBonus) || 0) : 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, pendingItem.wing5thOption1 || '254', pendingItem.wing5thOption2 || '254', 254, 254, 254 // wing options + padding (43 total)
       ].join(';')}},`
       
       console.log('=== DEBUG: Newly Created Item Code ===')
@@ -694,9 +729,12 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
         luck: item.luck,
         option: item.option,
         excellentOption: item.excellentOption,
-        ancientOption: 0,
+        ancientOption: item.ancientOption || 0,
         serial: 0,
-        serial2: 0
+        serial2: 0,
+        masteryBonus: item.masteryBonus || "0",
+        wing5thOption1: item.wing5thOption1 || "254",
+        wing5thOption2: item.wing5thOption2 || "254"
       }))
 
       const encodedData = encodeWarehouseData(warehouseDataItems)
