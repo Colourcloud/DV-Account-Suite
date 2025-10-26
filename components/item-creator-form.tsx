@@ -54,6 +54,21 @@ const WINGS_OPTION_STRINGS = [
   "Add Full Option to your wings"
 ]
 
+// 5th Wing Options
+const WING_5TH_OPTIONS = [
+  { value: "254", label: "None" },
+  { value: "1", label: "Increases HP Full Recovery Rate by 7%" },
+  { value: "2", label: "Increases Enemy DMG Return Rate by 7%" },
+  { value: "3", label: "Increases Enemy DEF Ignore Rate by 7%" },
+  { value: "4", label: "Increases Attack (Magic) Speed by 12" },
+  { value: "5", label: "Increases Excellent DMG Rate by 7%" },
+  { value: "6", label: "Increase Double DMG Rate by 7%" },
+  { value: "7", label: "Increases Strength by 65" },
+  { value: "8", label: "Increases Health by 65" },
+  { value: "9", label: "Increases Energy by 65" },
+  { value: "10", label: "Increase Agility by 65" }
+]
+
 interface ItemCreatorFormProps {
   onItemCreate?: (itemData: { 
     categoryGroup: number
@@ -66,6 +81,8 @@ interface ItemCreatorFormProps {
     option: number
     selectedOptions: boolean[]
     calculatedOptionValue: number
+    wing5thOption1: string
+    wing5thOption2: string
   }) => void
 }
 
@@ -79,12 +96,32 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
   const [durability, setDurability] = useState<string>("255")
   const [option, setOption] = useState<string>("0")
   const [selectedOptions, setSelectedOptions] = useState<boolean[]>([false, false, false, false, false, false])
+  
+  // Harmony Options state
+  const [harmonyOption1, setHarmonyOption1] = useState<string>("")
+  const [harmonyOption1Value, setHarmonyOption1Value] = useState<string>("")
+  const [harmonyOption2, setHarmonyOption2] = useState<string>("")
+  const [harmonyOption2Value, setHarmonyOption2Value] = useState<string>("")
+  const [harmonyOption3, setHarmonyOption3] = useState<string>("")
+  const [harmonyOption3Value, setHarmonyOption3Value] = useState<string>("")
+  
+  // Wing Options state
+  const [wing5thOption1, setWing5thOption1] = useState<string>("254")
+  const [wing5thOption2, setWing5thOption2] = useState<string>("254")
+  
+  // Current tab state
+  const [currentTab, setCurrentTab] = useState<string>("weapon")
 
   // Function to calculate option value based on number of selected options
   const calculateOptionValue = (selectedOptions: boolean[]) => {
     const selectedCount = selectedOptions.filter(selected => selected).length
     
-    // Map the number of selected options to the correct values
+    // Special handling for wings - if any option is selected, always return 63
+    if (currentTab === "wings" && selectedCount > 0) {
+      return 63
+    }
+    
+    // Map the number of selected options to the correct values for weapon/armour
     const valueMap = {
       0: 0,   // No options selected
       1: 1,   // 1 option selected
@@ -108,17 +145,26 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
         newOptions[i] = false
       }
     } else {
-      // If checking, can only check if all previous options are selected
-      let canSelect = true
-      for (let i = 0; i < index; i++) {
-        if (!newOptions[i]) {
-          canSelect = false
-          break
+      // Special handling for wings - allow direct selection without progressive logic
+      if (currentTab === "wings") {
+        // For wings, uncheck all other options first, then check the selected one
+        for (let i = 0; i < newOptions.length; i++) {
+          newOptions[i] = false
         }
-      }
-      
-      if (canSelect) {
         newOptions[index] = true
+      } else {
+        // For weapon/armour, use progressive selection logic
+        let canSelect = true
+        for (let i = 0; i < index; i++) {
+          if (!newOptions[i]) {
+            canSelect = false
+            break
+          }
+        }
+        
+        if (canSelect) {
+          newOptions[index] = true
+        }
       }
     }
     
@@ -167,17 +213,21 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
         durability: parseInt(durability),
         option: parseInt(option),
         selectedOptions: selectedOptions,
-        calculatedOptionValue: calculatedOptionValue
+        calculatedOptionValue: calculatedOptionValue,
+        wing5thOption1: wing5thOption1,
+        wing5thOption2: wing5thOption2
       }
       
       // Generate the item code string
-      const itemCode = `{${itemData.categoryGroup};${itemData.itemId};0;${itemData.itemLevel};0;${itemData.option};${itemData.durability};0;${itemData.luck ? 1 : 0};${itemData.skill ? 1 : 0};7;${calculatedOptionValue};0;0;0;65535;65535;65535;65535;65535;255;0;0;0;0;0;0;0;0;0;255;255;255;255;255;255;0;0;254;254;254;254}`
+      const itemCode = `{${itemData.categoryGroup};${itemData.itemId};0;${itemData.itemLevel};0;${itemData.option};${itemData.durability};0;${itemData.luck ? 1 : 0};${itemData.skill ? 1 : 0};7;${calculatedOptionValue};0;0;0;65535;65535;65535;65535;65535;255;0;0;0;0;0;0;0;0;0;255;255;255;255;255;255;0;0;${wing5thOption1};${wing5thOption2};254;254}`
       
       // Debug output
       console.log("=== NEW ITEM CREATED ===")
       console.log("Item Data:", itemData)
       console.log("Selected Options:", selectedOptions)
       console.log("Calculated Option Value (12th param):", calculatedOptionValue)
+      console.log("Wing 5th Option 1 (38th param):", wing5thOption1)
+      console.log("Wing 5th Option 2 (39th param):", wing5thOption2)
       console.log("Generated Item Code:")
       console.log(itemCode)
       console.log("=========================")
@@ -344,9 +394,9 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
           </div>
 
           {/* Additional Options Tabs */}
-          <div className="space-y-4">
+          <div className="space-y-4 border-t py-2 mt-6">
             <Label className="text-base font-medium">Additional Options</Label>
-            <Tabs defaultValue="weapon" className="w-full">
+            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="weapon">Weapon</TabsTrigger>
                 <TabsTrigger value="armour">Armour</TabsTrigger>
@@ -418,10 +468,6 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
               <TabsContent value="wings" className="space-y-3">
                 <div className="space-y-3">
                   {WINGS_OPTION_STRINGS.map((optionString, index) => {
-                    // Check if this option can be selected (all previous options must be selected)
-                    const canSelect = index === 0 || selectedOptions.slice(0, index).every(selected => selected)
-                    const isDisabled = !canSelect && !selectedOptions[index]
-                    
                     return (
                       <div key={index} className="flex items-center space-x-2">
                         <input
@@ -429,23 +475,167 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
                           id={`option-${index}`}
                           checked={selectedOptions[index]}
                           onChange={() => handleOptionToggle(index)}
-                          disabled={isDisabled}
-                          className={`h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary ${
-                            isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                          }`}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary cursor-pointer"
                         />
                         <Label 
                           htmlFor={`option-${index}`} 
-                          className={`text-sm ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          className="text-sm cursor-pointer"
                         >
                           {optionString}
                         </Label>
                       </div>
                     )
                   })}
+                  
+                  {/* 5th Wing Options */}
+                  <div className="space-y-4 pt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="wing-5th-option-1">5th Wing Option 1</Label>
+                        <Select value={wing5thOption1} onValueChange={setWing5thOption1}>
+                          <SelectTrigger id="wing-5th-option-1" className="w-full">
+                            <SelectValue placeholder="Select option..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {WING_5TH_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="wing-5th-option-2">5th Wing Option 2</Label>
+                        <Select value={wing5thOption2} onValueChange={setWing5thOption2}>
+                          <SelectTrigger id="wing-5th-option-2" className="w-full">
+                            <SelectValue placeholder="Select option..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {WING_5TH_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
+          </div>
+
+          {/* Harmony Options Section */}
+          <div className="space-y-4 mt-8 border-t py-2">
+            <Label className="text-base font-medium text-purple-400">Harmony Options</Label>
+            
+            {/* Harmony Option 1 Row */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="harmony-option-1">Harmony Option 1</Label>
+                <Select value={harmonyOption1} onValueChange={setHarmonyOption1}>
+                  <SelectTrigger id="harmony-option-1" className="w-full">
+                    <SelectValue placeholder="Select option..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="option1">Option 1</SelectItem>
+                    <SelectItem value="option2">Option 2</SelectItem>
+                    <SelectItem value="option3">Option 3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="harmony-option-1-value">Harmony Option 1 Value</Label>
+                <Select value={harmonyOption1Value} onValueChange={setHarmonyOption1Value}>
+                  <SelectTrigger id="harmony-option-1-value" className="w-full">
+                    <SelectValue placeholder="Select value..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0</SelectItem>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="5">5</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Harmony Option 2 Row */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="harmony-option-2">Harmony Option 2</Label>
+                <Select value={harmonyOption2} onValueChange={setHarmonyOption2}>
+                  <SelectTrigger id="harmony-option-2" className="w-full">
+                    <SelectValue placeholder="Select option..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="option1">Option 1</SelectItem>
+                    <SelectItem value="option2">Option 2</SelectItem>
+                    <SelectItem value="option3">Option 3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="harmony-option-2-value">Harmony Option 2 Value</Label>
+                <Select value={harmonyOption2Value} onValueChange={setHarmonyOption2Value}>
+                  <SelectTrigger id="harmony-option-2-value" className="w-full">
+                    <SelectValue placeholder="Select value..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0</SelectItem>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="5">5</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Harmony Option 3 Row */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="harmony-option-3">Harmony Option 3</Label>
+                <Select value={harmonyOption3} onValueChange={setHarmonyOption3}>
+                  <SelectTrigger id="harmony-option-3" className="w-full">
+                    <SelectValue placeholder="Select option..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="option1">Option 1</SelectItem>
+                    <SelectItem value="option2">Option 2</SelectItem>
+                    <SelectItem value="option3">Option 3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="harmony-option-3-value">Harmony Option 3 Value</Label>
+                <Select value={harmonyOption3Value} onValueChange={setHarmonyOption3Value}>
+                  <SelectTrigger id="harmony-option-3-value" className="w-full">
+                    <SelectValue placeholder="Select value..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0</SelectItem>
+                    <SelectItem value="1">1</SelectItem>
+                    <SelectItem value="2">2</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="4">4</SelectItem>
+                    <SelectItem value="5">5</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
 
           {/* Create Button */}

@@ -8,7 +8,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Package, Plus, Trash2, RefreshCw, MoreHorizontal } from "lucide-react"
 import { getItemById, ItemData, getItemImagePathById } from "@/lib/items-data"
-import { decodeWarehouseData, positionToGridCoords, WarehouseItemData, convertWarehouseItemsToGrid, decodeExcellentOptions, getItemTypeFromId, encodeWarehouseData, canPlaceItem, placeItemInGrid, gridCoordsToPosition } from "@/lib/warehouse-utils"
+import { decodeWarehouseData, positionToGridCoords, WarehouseItemData, convertWarehouseItemsToGrid, decodeExcellentOptions, getItemTypeFromId, encodeWarehouseData, canPlaceItem, placeItemInGrid, gridCoordsToPosition, decodeWing5thOptions } from "@/lib/warehouse-utils"
 
 interface WarehouseItem {
   id: number
@@ -39,6 +39,8 @@ interface WarehouseItem {
   classes: number[]
   luck: number
   excellentOption: number
+  wing5thOption1?: string
+  wing5thOption2?: string
   position?: { x: number; y: number }
   quantity?: number
 }
@@ -54,6 +56,8 @@ interface PendingItem {
   skill: boolean
   option: number
   excellentOption: number
+  wing5thOption1?: string
+  wing5thOption2?: string
 }
 
 interface WarehouseGridProps {
@@ -420,6 +424,20 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
                 ))}
               </div>
             )}
+
+            {/* Wing 5th Options - only show if item has wing options */}
+            {decodeWing5thOptions(item.wing5thOption1, item.wing5thOption2).length > 0 && (
+              <div className="">
+                <div className="text-sm font-medium text-center text-orange-400">
+                  Wing 5th Options:
+                </div>
+                {decodeWing5thOptions(item.wing5thOption1, item.wing5thOption2).map((option, index) => (
+                  <div key={index} className="text-sm text-yellow-400 text-center font-light">
+                    {option}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </HoverCardContent>
       </HoverCard>
@@ -480,6 +498,8 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           classes: [1, 1, 1, 1, 1, 1, 1],
           luck: pendingItem.luck ? 1 : 0,
           excellentOption: pendingItem.excellentOption,
+          wing5thOption1: pendingItem.wing5thOption1,
+          wing5thOption2: pendingItem.wing5thOption2,
           position: { x, y }
         }
 
@@ -492,19 +512,24 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
         setWarehouseItems(newWarehouseItems)
 
       // Convert to warehouse data format and encode
-      const warehouseDataItems: WarehouseItemData[] = newWarehouseItems.map(item => ({
-        position: gridCoordsToPosition(item.position!.x, item.position!.y),
-        itemId: item.id,
-        level: item.level,
-        durability: item.durability,
-        skill: item.skill,
-        luck: item.luck,
-        option: item.option,
-        excellentOption: item.excellentOption,
-        ancientOption: 0,
-        serial: 0, // Set to 0 as requested
-        serial2: 0
-      }))
+      const warehouseDataItems: WarehouseItemData[] = newWarehouseItems.map((item, index) => {
+        const isNewItem = index === newWarehouseItems.length - 1
+        return {
+          position: gridCoordsToPosition(item.position!.x, item.position!.y),
+          itemId: item.id,
+          level: item.level,
+          durability: item.durability,
+          skill: item.skill,
+          luck: item.luck,
+          option: item.option,
+          excellentOption: item.excellentOption,
+          ancientOption: 0,
+          serial: 0, // Set to 0 as requested
+          serial2: 0,
+          wing5thOption1: isNewItem ? pendingItem.wing5thOption1 : undefined,
+          wing5thOption2: isNewItem ? pendingItem.wing5thOption2 : undefined
+        }
+      })
 
       const encodedData = encodeWarehouseData(warehouseDataItems)
       
@@ -544,7 +569,7 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
         0,                           // ancientOption
         0,                           // unknown
         0,                           // unknown
-        65535, 65535, 65535, 65535, 65535, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, 254, 254, 254, 254 // padding (43 total)
+        65535, 65535, 65535, 65535, 65535, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, pendingItem.wing5thOption1 || '254', pendingItem.wing5thOption2 || '254', 254, 254 // wing options + padding (43 total)
       ].join(';')}},`
       
       console.log('=== DEBUG: Newly Created Item Code ===')

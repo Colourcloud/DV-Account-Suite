@@ -17,6 +17,8 @@ export interface WarehouseItemData {
   ancientOption: number
   serial: number
   serial2: number
+  wing5thOption1?: string
+  wing5thOption2?: string
 }
 
 /**
@@ -97,7 +99,9 @@ function parseItemFromValues(values: number[]): WarehouseItemData | null {
       excellentOption: values[11],   // 12: Excellent Option
       ancientOption: values[12],     // 13: Ancient Option
       serial: values[3],             // 4: Serial
-      serial2: values[4]             // 5: Serial (second)
+      serial2: values[4],            // 5: Serial (second)
+      wing5thOption1: values.length > 38 ? values[38].toString() : "254",  // 39: Wing 5th Option 1
+      wing5thOption2: values.length > 39 ? values[39].toString() : "254"   // 40: Wing 5th Option 2
     }
   } catch (error) {
     console.error('Error parsing item from values:', error)
@@ -145,6 +149,8 @@ export function convertWarehouseItemsToGrid(warehouseItems: WarehouseItemData[])
     excellentOption: item.excellentOption,
     ancientOption: item.ancientOption,
     serial: item.serial,
+    wing5thOption1: item.wing5thOption1,
+    wing5thOption2: item.wing5thOption2,
     // Add default dimensions - these will be overridden by item data from database
     width: 1,
     height: 1
@@ -250,6 +256,46 @@ export function getItemTypeFromId(itemId: number): 'weapon' | 'armor' | 'accesso
   return 'accessory'
 }
 
+/**
+ * Decodes wing 5th options from their numeric values
+ * @param wing5thOption1 - The first wing 5th option value
+ * @param wing5thOption2 - The second wing 5th option value
+ * @returns Array of wing option descriptions
+ */
+export function decodeWing5thOptions(wing5thOption1?: string, wing5thOption2?: string): string[] {
+  const options: string[] = []
+  
+  const wingOptions = [
+    { value: "254", label: "None" },
+    { value: "1", label: "Increases HP Full Recovery Rate by 7%" },
+    { value: "2", label: "Increases Enemy DMG Return Rate by 7%" },
+    { value: "3", label: "Increases Enemy DEF Ignore Rate by 7%" },
+    { value: "4", label: "Increases Attack (Magic) Speed by 12" },
+    { value: "5", label: "Increases Excellent DMG Rate by 7%" },
+    { value: "6", label: "Increase Double DMG Rate by 7%" },
+    { value: "7", label: "Increases Strength by 65" },
+    { value: "8", label: "Increases Health by 65" },
+    { value: "9", label: "Increases Energy by 65" },
+    { value: "10", label: "Increase Agility by 65" }
+  ]
+  
+  if (wing5thOption1 && wing5thOption1 !== "254") {
+    const option1 = wingOptions.find(opt => opt.value === wing5thOption1)
+    if (option1) {
+      options.push(option1.label)
+    }
+  }
+  
+  if (wing5thOption2 && wing5thOption2 !== "254") {
+    const option2 = wingOptions.find(opt => opt.value === wing5thOption2)
+    if (option2) {
+      options.push(option2.label)
+    }
+  }
+  
+  return options
+}
+
 
 /**
  * Encodes warehouse items back to base64 format
@@ -308,10 +354,10 @@ export function encodeWarehouseData(items: WarehouseItemData[]): string {
       values[35] = 255                 // 36: Standard padding
       values[36] = 0                   // 37: Standard padding
       values[37] = 0                   // 38: Standard padding
-      values[38] = 254                 // 39: Standard padding
-      values[39] = 254                 // 40: Standard padding
+      values[38] = parseInt(item.wing5thOption1 || '254')  // 39: Wing 5th Option 1
+      values[39] = parseInt(item.wing5thOption2 || '254')  // 40: Wing 5th Option 2
       values[40] = 254                 // 41: Standard padding
-      values[41] = 254                 // 42: Standard padding (extra 254;254)
+      values[41] = 254                 // 42: Standard padding
       
       return `{${values.join(';')}}`
     })

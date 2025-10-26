@@ -716,7 +716,9 @@ export default function CharacterPage({ params }: { params: Promise<{ character:
                     luck: itemData.luck,
                     skill: itemData.skill,
                     option: itemData.option,
-                    excellentOption: itemData.calculatedOptionValue
+                    excellentOption: itemData.calculatedOptionValue,
+                    wing5thOption1: itemData.wing5thOption1,
+                    wing5thOption2: itemData.wing5thOption2
                   }
                   
                   startItemPlacement(pendingItem)
