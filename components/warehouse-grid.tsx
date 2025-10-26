@@ -130,7 +130,7 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           
           // Create item codes for all existing items
           const existingItemCodes = decodedItems.map(item => {
-            const values = new Array(40).fill(0)
+            const values = new Array(43).fill(0)
             values[0] = item.position
             values[1] = item.itemId
             values[2] = 0
@@ -162,16 +162,19 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
             values[27] = 0
             values[28] = 0
             values[29] = 0
-            values[30] = 255
+            values[30] = 0
             values[31] = 255
             values[32] = 255
             values[33] = 255
             values[34] = 255
             values[35] = 255
-            values[36] = 0
+            values[36] = 255
             values[37] = 0
-            values[38] = 254
+            values[38] = 0
             values[39] = 254
+            values[40] = 254
+            values[41] = 254
+            values[42] = 254
             
             return `{${values.join(';')}}`
           })
@@ -444,20 +447,8 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
     // Check if the item can fit at this position
     if (canPlaceItem(grid, x, y, pendingItem.width, pendingItem.height)) {
       try {
-        // Get the next serial number from the database
-        const response = await fetch('/api/characters/serial', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
-        
-        if (!response.ok) {
-          throw new Error('Failed to get serial number')
-        }
-        
-        const { serial } = await response.json()
-        console.log('Got serial number:', serial)
+        // Generate a simple serial number (timestamp-based for uniqueness)
+        const serial = Date.now() + Math.floor(Math.random() * 1000)
 
         // Create the new warehouse item
         const newWarehouseItem: WarehouseItem = {
@@ -468,7 +459,7 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           skill: pendingItem.skill ? 1 : 0,
           width: pendingItem.width,
           height: pendingItem.height,
-          serial: serial,
+          serial: 0,
           option: pendingItem.option,
           drop: 1,
           name: pendingItem.name,
@@ -553,7 +544,7 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
         0,                           // ancientOption
         0,                           // unknown
         0,                           // unknown
-        65535, 65535, 65535, 65535, 65535, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, 254, 254, 254, 254 // padding
+        65535, 65535, 65535, 65535, 65535, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, 254, 254, 254, 254 // padding (43 total)
       ].join(';')}},`
       
       console.log('=== DEBUG: Newly Created Item Code ===')
@@ -595,7 +586,7 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
         setPendingItem(null)
         setIsPlacingItem(false)
       } catch (error) {
-        console.error('Error getting serial number:', error)
+        console.error('Error placing item:', error)
         // You might want to show an error message to the user here
       }
     }

@@ -311,32 +311,6 @@ export class CharacterManager {
   }
 
 
-  // Get the next item serial number
-  static async getNextItemSerial() {
-    // Use direct connection instead of pool to ensure transaction commits
-    const connection = await mysql.createConnection(dbConfig)
-    try {
-      console.log('Getting next serial number...')
-      
-      // Increment first (atomic operation)
-      const updateResult = await connection.execute('UPDATE item_serial SET serial = serial + 1 WHERE server = 0')
-      console.log('Update result:', updateResult)
-      
-      // Read the new count
-      const [rows] = await connection.execute('SELECT serial FROM item_serial WHERE server = 0 LIMIT 1')
-      console.log('Serial query result:', rows)
-      
-      const newCount = Array.isArray(rows) && rows.length > 0 ? (rows[0] as any).serial : 0
-      console.log('New serial count:', newCount)
-      
-      return newCount
-    } catch (error) {
-      console.error('Error getting serial number:', error)
-      throw error
-    } finally {
-      await connection.end()
-    }
-  }
 
   // Update character
   static async updateCharacter(characterName: string, updateData: {

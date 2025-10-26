@@ -49,6 +49,7 @@ export function decodeWarehouseData(warehouseData: string): WarehouseItemData[] 
       const values = cleanedItem.split(';').map(v => parseInt(v.trim())).filter(v => !isNaN(v))
       console.log('Values count:', values.length, 'First 10:', values.slice(0, 10))
       
+      // Support both old 40-value format (from database) and new 43-value format (newly created items)
       if (values.length >= 40) {
         const itemData = parseItemFromValues(values)
         console.log('Parsed item:', itemData)
@@ -80,6 +81,7 @@ export function decodeWarehouseData(warehouseData: string): WarehouseItemData[] 
  */
 function parseItemFromValues(values: number[]): WarehouseItemData | null {
   try {
+    // Support both old 40-value format and new 43-value format
     if (values.length < 40) {
       return null
     }
@@ -262,15 +264,15 @@ export function encodeWarehouseData(items: WarehouseItemData[]): string {
 
     // Convert items to the semicolon-separated format
     const itemStrings = items.map(item => {
-      // Create the 40-element array with the important first 15 values and padding
-      const values = new Array(40).fill(0)
+      // Create the 42-element array with the important first 15 values and padding
+      const values = new Array(42).fill(0)
       
       // Important first 15 values
       values[0] = item.position        // 0: Slot Position
       values[1] = item.itemId          // 1: Item ID  
       values[2] = 0                    // 2: Unknown (usually 0)
-      values[3] = 0                   // 3: Serial (set to 0)
-      values[4] = 0                    // 4: Unknown (usually 0)
+      values[3] = item.serial          // 3: Serial
+      values[4] = item.serial2         // 4: Serial (second)
       values[5] = item.level           // 5: Item level
       values[6] = item.durability      // 6: Durability
       values[7] = 0                    // 7: Unknown (usually 0)
@@ -281,15 +283,15 @@ export function encodeWarehouseData(items: WarehouseItemData[]): string {
       values[12] = item.ancientOption  // 12: Ancient Option
       values[13] = 0                   // 13: Unknown (usually 0)
       values[14] = 0                   // 14: Unknown (usually 0)
-      values[15] = 0                   // 15: Unknown (usually 0)
       
       // Fill the rest with standard padding values
+      values[15] = 65535               // 15: Standard padding
       values[16] = 65535               // 16: Standard padding
       values[17] = 65535               // 17: Standard padding
       values[18] = 65535               // 18: Standard padding
       values[19] = 65535               // 19: Standard padding
-      values[20] = 65535               // 20: Standard padding
-      values[21] = 255                 // 21: Standard padding
+      values[20] = 255                 // 20: Standard padding
+      values[21] = 0                   // 21: Standard padding
       values[22] = 0                   // 22: Standard padding
       values[23] = 0                   // 23: Standard padding
       values[24] = 0                   // 24: Standard padding
@@ -298,22 +300,24 @@ export function encodeWarehouseData(items: WarehouseItemData[]): string {
       values[27] = 0                   // 27: Standard padding
       values[28] = 0                   // 28: Standard padding
       values[29] = 0                   // 29: Standard padding
-      values[30] = 255                 // 30: Standard padding
-      values[31] = 255                 // 31: Standard padding
-      values[32] = 255                 // 32: Standard padding
-      values[33] = 255                 // 33: Standard padding
-      values[34] = 255                 // 34: Standard padding
-      values[35] = 255                 // 35: Standard padding
-      values[36] = 0                   // 36: Standard padding
-      values[37] = 0                   // 37: Standard padding
-      values[38] = 254                 // 38: Standard padding
-      values[39] = 254                 // 39: Standard padding
+      values[30] = 255                 // 31: Standard padding
+      values[31] = 255                 // 32: Standard padding
+      values[32] = 255                 // 33: Standard padding
+      values[33] = 255                 // 34: Standard padding
+      values[34] = 255                 // 35: Standard padding
+      values[35] = 255                 // 36: Standard padding
+      values[36] = 0                   // 37: Standard padding
+      values[37] = 0                   // 38: Standard padding
+      values[38] = 254                 // 39: Standard padding
+      values[39] = 254                 // 40: Standard padding
+      values[40] = 254                 // 41: Standard padding
+      values[41] = 254                 // 42: Standard padding (extra 254;254)
       
       return `{${values.join(';')}}`
     })
 
-    // Join all items with commas
-    const warehouseString = itemStrings.join(',')
+    // Join all items with commas and add trailing comma at the end
+    const warehouseString = itemStrings.join(',') + ','
     
     // Single encode to base64 (to match database format)
     const encoded = Buffer.from(warehouseString, 'utf8').toString('base64')

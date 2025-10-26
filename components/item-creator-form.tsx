@@ -26,6 +26,7 @@ const ITEM_CATEGORIES = [
   { label: "Boots", value: "11", group: 11 },
   { label: "Wings/Capes", value: "12", group: 12 },
   { label: "Misc Items", value: "13", group: 13 },
+  { label: "Jewels", value: "14", group: 14 },
 ]
 
 // Option values and their corresponding strings
@@ -261,12 +262,12 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
               <Label htmlFor="item-level">Item Level</Label>
               <Select value={itemLevel} onValueChange={setItemLevel}>
                 <SelectTrigger id="item-level" className="w-full">
-                  <SelectValue placeholder="1" />
+                  <SelectValue placeholder="0" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 15 }, (_, i) => (
-                    <SelectItem key={i + 1} value={(i + 1).toString()}>
-                      +{i + 1}
+                  {Array.from({ length: 16 }, (_, i) => (
+                    <SelectItem key={i} value={i.toString()}>
+                      +{i}
                     </SelectItem>
                   ))}
                 </SelectContent>
