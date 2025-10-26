@@ -281,9 +281,9 @@ export function encodeWarehouseData(items: WarehouseItemData[]): string {
       values[12] = item.ancientOption  // 12: Ancient Option
       values[13] = 0                   // 13: Unknown (usually 0)
       values[14] = 0                   // 14: Unknown (usually 0)
+      values[15] = 0                   // 15: Unknown (usually 0)
       
       // Fill the rest with standard padding values
-      values[15] = 0                   // 15: Unknown
       values[16] = 65535               // 16: Standard padding
       values[17] = 65535               // 17: Standard padding
       values[18] = 65535               // 18: Standard padding

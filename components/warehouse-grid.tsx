@@ -53,6 +53,7 @@ interface PendingItem {
   luck: boolean
   skill: boolean
   option: number
+  excellentOption: number
 }
 
 interface WarehouseGridProps {
@@ -78,6 +79,11 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
   const [selectedItem, setSelectedItem] = useState<WarehouseItem | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 })
+  const [debugInfo, setDebugInfo] = useState<{
+    inventoryData: WarehouseItemData[]
+    newItemCode: string
+    encodedData: string
+  } | null>(null)
 
   // Initialize empty grid
   useEffect(() => {
@@ -103,6 +109,84 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           const decodedItems = decodeWarehouseData(warehouseData)
           console.log('Decoded items:', decodedItems)
           
+          // DEBUG: Print decoded data for all existing items
+          console.log('=== DEBUG: Loading Existing Warehouse Items ===')
+          console.log('Total existing items:', decodedItems.length)
+          decodedItems.forEach((item, index) => {
+            console.log(`Existing Item ${index + 1}:`, {
+              position: item.position,
+              itemId: item.itemId,
+              level: item.level,
+              durability: item.durability,
+              skill: item.skill,
+              luck: item.luck,
+              option: item.option,
+              excellentOption: item.excellentOption,
+              ancientOption: item.ancientOption,
+              serial: item.serial,
+              serial2: item.serial2
+            })
+          })
+          
+          // Create item codes for all existing items
+          const existingItemCodes = decodedItems.map(item => {
+            const values = new Array(40).fill(0)
+            values[0] = item.position
+            values[1] = item.itemId
+            values[2] = 0
+            values[3] = item.serial
+            values[4] = 0
+            values[5] = item.level
+            values[6] = item.durability
+            values[7] = 0
+            values[8] = item.skill
+            values[9] = item.luck
+            values[10] = item.option
+            values[11] = item.excellentOption
+            values[12] = item.ancientOption
+            values[13] = 0
+            values[14] = 0
+            // Add padding
+            values[15] = 0
+            values[16] = 65535
+            values[17] = 65535
+            values[18] = 65535
+            values[19] = 65535
+            values[20] = 65535
+            values[21] = 255
+            values[22] = 0
+            values[23] = 0
+            values[24] = 0
+            values[25] = 0
+            values[26] = 0
+            values[27] = 0
+            values[28] = 0
+            values[29] = 0
+            values[30] = 255
+            values[31] = 255
+            values[32] = 255
+            values[33] = 255
+            values[34] = 255
+            values[35] = 255
+            values[36] = 0
+            values[37] = 0
+            values[38] = 254
+            values[39] = 254
+            
+            return `{${values.join(';')}}`
+          })
+          
+          console.log('=== DEBUG: Existing Item Codes ===')
+          existingItemCodes.forEach((code, index) => {
+            console.log(`Existing Item ${index + 1} Code:`, code)
+          })
+          
+          // Store debug info for existing items
+          setDebugInfo({
+            inventoryData: decodedItems,
+            newItemCode: '',
+            encodedData: warehouseData
+          })
           
           // Convert decoded items to WarehouseItem format
           const convertedItems = convertWarehouseItemsToGrid(decodedItems)
@@ -404,7 +488,7 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           setType: 0,
           classes: [1, 1, 1, 1, 1, 1, 1],
           luck: pendingItem.luck ? 1 : 0,
-          excellentOption: 0,
+          excellentOption: pendingItem.excellentOption,
           position: { x, y }
         }
 
@@ -432,6 +516,56 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
       }))
 
       const encodedData = encodeWarehouseData(warehouseDataItems)
+      
+      // DEBUG: Print the entire decoded inventory data
+      console.log('=== DEBUG: Full Decoded Inventory Data ===')
+      console.log('Total items:', warehouseDataItems.length)
+      warehouseDataItems.forEach((item, index) => {
+        console.log(`Item ${index + 1}:`, {
+          position: item.position,
+          itemId: item.itemId,
+          level: item.level,
+          durability: item.durability,
+          skill: item.skill,
+          luck: item.luck,
+          option: item.option,
+          excellentOption: item.excellentOption,
+          ancientOption: item.ancientOption,
+          serial: item.serial,
+          serial2: item.serial2
+        })
+      })
+      
+      // DEBUG: Print the newly created item code
+      const newItemCode = `{${[
+        gridCoordsToPosition(x, y),  // position
+        pendingItem.id,              // itemId
+        0,                           // unknown
+        0,                           // serial
+        0,                           // unknown
+        pendingItem.level,           // level
+        pendingItem.durability,      // durability
+        0,                           // unknown
+        pendingItem.skill ? 1 : 0,   // skill
+        pendingItem.luck ? 1 : 0,    // luck
+        pendingItem.option,          // option
+        pendingItem.excellentOption, // excellentOption
+        0,                           // ancientOption
+        0,                           // unknown
+        0,                           // unknown
+        65535, 65535, 65535, 65535, 65535, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 0, 0, 254, 254, 254, 254 // padding
+      ].join(';')}},`
+      
+      console.log('=== DEBUG: Newly Created Item Code ===')
+      console.log('New item code:', newItemCode)
+      console.log('Encoded warehouse data:', encodedData.substring(0, 200) + '...')
+      
+      // Store debug info for UI display
+      setDebugInfo({
+        inventoryData: warehouseDataItems,
+        newItemCode: newItemCode,
+        encodedData: encodedData
+      })
         
         // Notify parent component of the update
         if (onWarehouseUpdate) {
@@ -757,6 +891,48 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
             </Badge>
           </div>
         </div>
+
+        {/* Debug Information */}
+        {debugInfo && (
+          <div className="mt-4 p-4 bg-gray-900 rounded-lg border">
+            <h4 className="text-sm font-semibold text-green-400 mb-2">🐛 Debug Information</h4>
+            
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="text-blue-400 font-medium">Total Items:</span> {debugInfo.inventoryData.length}
+              </div>
+              
+              <div>
+                <span className="text-blue-400 font-medium">New Item Code:</span>
+                <div className="mt-1 p-2 bg-black rounded font-mono text-green-300 break-all">
+                  {debugInfo.newItemCode}
+                </div>
+              </div>
+              
+              <div>
+                <span className="text-blue-400 font-medium">Encoded Data (first 200 chars):</span>
+                <div className="mt-1 p-2 bg-black rounded font-mono text-yellow-300 break-all">
+                  {debugInfo.encodedData.substring(0, 200)}...
+                </div>
+              </div>
+              
+              <div>
+                <span className="text-blue-400 font-medium">All Items Data:</span>
+                <div className="mt-1 max-h-32 overflow-y-auto">
+                  {debugInfo.inventoryData.map((item, index) => (
+                    <div key={index} className="p-1 bg-gray-800 rounded mb-1 text-xs">
+                      <span className="text-purple-400">Item {index + 1}:</span> 
+                      <span className="text-white ml-2">
+                        ID:{item.itemId} Pos:{item.position} Lvl:{item.level} Dur:{item.durability} 
+                        Skill:{item.skill} Luck:{item.luck} Opt:{item.option}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
 
       {/* Context Menu */}
