@@ -768,7 +768,12 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
         serial2: 0,
         masteryBonus: item.masteryBonus || "0",
         wing5thOption1: item.wing5thOption1 || "254",
-        wing5thOption2: item.wing5thOption2 || "254"
+        wing5thOption2: item.wing5thOption2 || "254",
+        socket1: item.socket1 || "65535",
+        socket2: item.socket2 || "65535",
+        socket3: item.socket3 || "65535",
+        socket4: item.socket4 || "65535",
+        socket5: item.socket5 || "65535"
       }))
 
       const encodedData = encodeWarehouseData(warehouseDataItems)
