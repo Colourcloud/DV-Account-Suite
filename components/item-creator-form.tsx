@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Plus, PackagePlus } from "lucide-react"
 import { ITEMS_DATABASE, ItemData } from "@/lib/items-data"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 // Item categories mapping
 const ITEM_CATEGORIES = [
@@ -557,113 +558,122 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
           </div>
 
           {/* Harmony Options Section */}
-          <div className="space-y-4 mt-8 border-t py-2">
-            <Label className="text-base font-medium text-purple-400">Harmony Options</Label>
-            
-            {/* Harmony Option 1 Row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="harmony-option-1">Harmony Option 1</Label>
-                <Select value={harmonyOption1} onValueChange={setHarmonyOption1}>
-                  <SelectTrigger id="harmony-option-1" className="w-full">
-                    <SelectValue placeholder="Select option..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="option1">Option 1</SelectItem>
-                    <SelectItem value="option2">Option 2</SelectItem>
-                    <SelectItem value="option3">Option 3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="harmony-option-1-value">Harmony Option 1 Value</Label>
-                <Select value={harmonyOption1Value} onValueChange={setHarmonyOption1Value}>
-                  <SelectTrigger id="harmony-option-1-value" className="w-full">
-                    <SelectValue placeholder="Select value..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">0</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          <div className="mt-8 border-t py-2">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="harmony-options">
+                <AccordionTrigger className="text-base font-medium text-purple-400">
+                  Harmony Options
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4 pt-2">
+                    {/* Harmony Option 1 Row */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="harmony-option-1">Harmony Option 1</Label>
+                        <Select value={harmonyOption1} onValueChange={setHarmonyOption1}>
+                          <SelectTrigger id="harmony-option-1" className="w-full">
+                            <SelectValue placeholder="Select option..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="option1">Option 1</SelectItem>
+                            <SelectItem value="option2">Option 2</SelectItem>
+                            <SelectItem value="option3">Option 3</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="harmony-option-1-value">Harmony Option 1 Value</Label>
+                        <Select value={harmonyOption1Value} onValueChange={setHarmonyOption1Value}>
+                          <SelectTrigger id="harmony-option-1-value" className="w-full">
+                            <SelectValue placeholder="Select value..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">0</SelectItem>
+                            <SelectItem value="1">1</SelectItem>
+                            <SelectItem value="2">2</SelectItem>
+                            <SelectItem value="3">3</SelectItem>
+                            <SelectItem value="4">4</SelectItem>
+                            <SelectItem value="5">5</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-            {/* Harmony Option 2 Row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="harmony-option-2">Harmony Option 2</Label>
-                <Select value={harmonyOption2} onValueChange={setHarmonyOption2}>
-                  <SelectTrigger id="harmony-option-2" className="w-full">
-                    <SelectValue placeholder="Select option..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="option1">Option 1</SelectItem>
-                    <SelectItem value="option2">Option 2</SelectItem>
-                    <SelectItem value="option3">Option 3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="harmony-option-2-value">Harmony Option 2 Value</Label>
-                <Select value={harmonyOption2Value} onValueChange={setHarmonyOption2Value}>
-                  <SelectTrigger id="harmony-option-2-value" className="w-full">
-                    <SelectValue placeholder="Select value..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">0</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                    {/* Harmony Option 2 Row */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="harmony-option-2">Harmony Option 2</Label>
+                        <Select value={harmonyOption2} onValueChange={setHarmonyOption2}>
+                          <SelectTrigger id="harmony-option-2" className="w-full">
+                            <SelectValue placeholder="Select option..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="option1">Option 1</SelectItem>
+                            <SelectItem value="option2">Option 2</SelectItem>
+                            <SelectItem value="option3">Option 3</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="harmony-option-2-value">Harmony Option 2 Value</Label>
+                        <Select value={harmonyOption2Value} onValueChange={setHarmonyOption2Value}>
+                          <SelectTrigger id="harmony-option-2-value" className="w-full">
+                            <SelectValue placeholder="Select value..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">0</SelectItem>
+                            <SelectItem value="1">1</SelectItem>
+                            <SelectItem value="2">2</SelectItem>
+                            <SelectItem value="3">3</SelectItem>
+                            <SelectItem value="4">4</SelectItem>
+                            <SelectItem value="5">5</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-            {/* Harmony Option 3 Row */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="harmony-option-3">Harmony Option 3</Label>
-                <Select value={harmonyOption3} onValueChange={setHarmonyOption3}>
-                  <SelectTrigger id="harmony-option-3" className="w-full">
-                    <SelectValue placeholder="Select option..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="option1">Option 1</SelectItem>
-                    <SelectItem value="option2">Option 2</SelectItem>
-                    <SelectItem value="option3">Option 3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="harmony-option-3-value">Harmony Option 3 Value</Label>
-                <Select value={harmonyOption3Value} onValueChange={setHarmonyOption3Value}>
-                  <SelectTrigger id="harmony-option-3-value" className="w-full">
-                    <SelectValue placeholder="Select value..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">0</SelectItem>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                    {/* Harmony Option 3 Row */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="harmony-option-3">Harmony Option 3</Label>
+                        <Select value={harmonyOption3} onValueChange={setHarmonyOption3}>
+                          <SelectTrigger id="harmony-option-3" className="w-full">
+                            <SelectValue placeholder="Select option..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="option1">Option 1</SelectItem>
+                            <SelectItem value="option2">Option 2</SelectItem>
+                            <SelectItem value="option3">Option 3</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="harmony-option-3-value">Harmony Option 3 Value</Label>
+                        <Select value={harmonyOption3Value} onValueChange={setHarmonyOption3Value}>
+                          <SelectTrigger id="harmony-option-3-value" className="w-full">
+                            <SelectValue placeholder="Select value..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">0</SelectItem>
+                            <SelectItem value="1">1</SelectItem>
+                            <SelectItem value="2">2</SelectItem>
+                            <SelectItem value="3">3</SelectItem>
+                            <SelectItem value="4">4</SelectItem>
+                            <SelectItem value="5">5</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
 
           {/* Create Button */}
