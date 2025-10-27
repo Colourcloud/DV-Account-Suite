@@ -86,6 +86,11 @@ interface ItemCreatorFormProps {
     calculatedOptionValue: number
     wing5thOption1: string
     wing5thOption2: string
+    socket1: string
+    socket2: string
+    socket3: string
+    socket4: string
+    socket5: string
   }) => void
 }
 
@@ -115,6 +120,13 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
   
   // Mastery Bonus state
   const [masteryBonus, setMasteryBonus] = useState<string>("0")
+  
+  // Socket System state
+  const [socket1, setSocket1] = useState<string>("65535")
+  const [socket2, setSocket2] = useState<string>("65535")
+  const [socket3, setSocket3] = useState<string>("65535")
+  const [socket4, setSocket4] = useState<string>("65535")
+  const [socket5, setSocket5] = useState<string>("65535")
   
   // Current tab state
   const [currentTab, setCurrentTab] = useState<string>("weapon")
@@ -224,11 +236,16 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
         selectedOptions: selectedOptions,
         calculatedOptionValue: calculatedOptionValue,
         wing5thOption1: wing5thOption1,
-        wing5thOption2: wing5thOption2
+        wing5thOption2: wing5thOption2,
+        socket1: socket1,
+        socket2: socket2,
+        socket3: socket3,
+        socket4: socket4,
+        socket5: socket5
       }
       
-      // Generate the item code string
-      const itemCode = `{${itemData.categoryGroup};${itemData.itemId};0;${itemData.itemLevel};0;${itemData.option};${itemData.durability};0;${itemData.skill ? 1 : 0};${itemData.luck ? 1 : 0};7;${calculatedOptionValue};${itemData.masterySetItem ? 9 : 0};0;0;65535;65535;65535;65535;65535;${itemData.masterySetItem ? masteryBonus : 0};0;0;0;0;0;0;0;0;0;255;255;255;255;255;255;0;0;${wing5thOption1};${wing5thOption2};254;254}`
+      // Generate the item code string with socket values in positions 16-20
+      const itemCode = `{${itemData.categoryGroup};${itemData.itemId};0;${itemData.itemLevel};0;${itemData.option};${itemData.durability};0;${itemData.skill ? 1 : 0};${itemData.luck ? 1 : 0};7;${calculatedOptionValue};${itemData.masterySetItem ? 9 : 0};0;0;${socket1};${socket2};${socket3};${socket4};${socket5};${itemData.masterySetItem ? masteryBonus : 0};0;0;0;0;0;0;0;0;0;255;255;255;255;255;255;0;0;${wing5thOption1};${wing5thOption2};254;254}`
       
       onItemCreate(itemData)
     }
@@ -421,6 +438,82 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
               </Select>
             </div>
           )}
+
+          {/* Socket System Section */}
+          <div className="space-y-4 border-t py-2 mt-6">
+            <Label className="text-base font-medium">Socket System</Label>
+            
+            {/* First row - Socket 1 and Socket 2 side by side */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="socket1">Socket 1</Label>
+                <Select value={socket1} onValueChange={setSocket1}>
+                  <SelectTrigger id="socket1" className="w-full">
+                    <SelectValue placeholder="Select socket..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="65535">No Socket</SelectItem>
+                    <SelectItem value="65534">Empty Socket</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="socket2">Socket 2</Label>
+                <Select value={socket2} onValueChange={setSocket2}>
+                  <SelectTrigger id="socket2" className="w-full">
+                    <SelectValue placeholder="Select socket..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="65535">No Socket</SelectItem>
+                    <SelectItem value="65534">Empty Socket</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Second row - Socket 3, 4, 5 */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="socket3">Socket 3</Label>
+                <Select value={socket3} onValueChange={setSocket3}>
+                  <SelectTrigger id="socket3" className="w-full">
+                    <SelectValue placeholder="Select socket..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="65535">No Socket</SelectItem>
+                    <SelectItem value="65534">Empty Socket</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="socket4">Socket 4</Label>
+                <Select value={socket4} onValueChange={setSocket4}>
+                  <SelectTrigger id="socket4" className="w-full">
+                    <SelectValue placeholder="Select socket..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="65535">No Socket</SelectItem>
+                    <SelectItem value="65534">Empty Socket</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="socket5">Socket 5</Label>
+                <Select value={socket5} onValueChange={setSocket5}>
+                  <SelectTrigger id="socket5" className="w-full">
+                    <SelectValue placeholder="Select socket..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="65535">No Socket</SelectItem>
+                    <SelectItem value="65534">Empty Socket</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
 
           {/* Additional Options Tabs */}
           <div className="space-y-4 border-t py-2 mt-6">

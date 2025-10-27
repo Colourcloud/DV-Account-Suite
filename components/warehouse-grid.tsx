@@ -43,6 +43,11 @@ interface WarehouseItem {
   masteryBonus?: string
   wing5thOption1?: string
   wing5thOption2?: string
+  socket1?: string
+  socket2?: string
+  socket3?: string
+  socket4?: string
+  socket5?: string
   position?: { x: number; y: number }
   quantity?: number
 }
@@ -63,6 +68,11 @@ interface PendingItem {
   ancientOption: number
   wing5thOption1?: string
   wing5thOption2?: string
+  socket1?: string
+  socket2?: string
+  socket3?: string
+  socket4?: string
+  socket5?: string
 }
 
 interface WarehouseGridProps {
@@ -534,6 +544,11 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           masteryBonus: pendingItem.masteryBonus,
           wing5thOption1: pendingItem.wing5thOption1,
           wing5thOption2: pendingItem.wing5thOption2,
+          socket1: pendingItem.socket1,
+          socket2: pendingItem.socket2,
+          socket3: pendingItem.socket3,
+          socket4: pendingItem.socket4,
+          socket5: pendingItem.socket5,
           position: { x, y }
         }
 
@@ -562,7 +577,12 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
           serial2: 0,
           masteryBonus: isNewItem ? pendingItem.masteryBonus : (item.masteryBonus || "0"),
           wing5thOption1: isNewItem ? pendingItem.wing5thOption1 : (item.wing5thOption1 || "254"),
-          wing5thOption2: isNewItem ? pendingItem.wing5thOption2 : (item.wing5thOption2 || "254")
+          wing5thOption2: isNewItem ? pendingItem.wing5thOption2 : (item.wing5thOption2 || "254"),
+          socket1: isNewItem ? (pendingItem.socket1 || "65535") : (item.socket1 || "65535"),
+          socket2: isNewItem ? (pendingItem.socket2 || "65535") : (item.socket2 || "65535"),
+          socket3: isNewItem ? (pendingItem.socket3 || "65535") : (item.socket3 || "65535"),
+          socket4: isNewItem ? (pendingItem.socket4 || "65535") : (item.socket4 || "65535"),
+          socket5: isNewItem ? (pendingItem.socket5 || "65535") : (item.socket5 || "65535")
         }
       })
 

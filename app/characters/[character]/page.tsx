@@ -721,7 +721,12 @@ export default function CharacterPage({ params }: { params: Promise<{ character:
                     excellentOption: itemData.calculatedOptionValue,
                     ancientOption: itemData.masterySetItem ? 9 : 0,
                     wing5thOption1: itemData.wing5thOption1,
-                    wing5thOption2: itemData.wing5thOption2
+                    wing5thOption2: itemData.wing5thOption2,
+                    socket1: itemData.socket1,
+                    socket2: itemData.socket2,
+                    socket3: itemData.socket3,
+                    socket4: itemData.socket4,
+                    socket5: itemData.socket5
                   }
                   
                   startItemPlacement(pendingItem)

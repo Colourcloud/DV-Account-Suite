@@ -20,6 +20,11 @@ export interface WarehouseItemData {
   masteryBonus?: string
   wing5thOption1?: string
   wing5thOption2?: string
+  socket1?: string
+  socket2?: string
+  socket3?: string
+  socket4?: string
+  socket5?: string
 }
 
 /**
@@ -103,7 +108,12 @@ function parseItemFromValues(values: number[]): WarehouseItemData | null {
       serial2: values[4],            // 5: Serial (second)
       masteryBonus: values.length > 20 ? values[20].toString() : "0",  // 21: Mastery Bonus
       wing5thOption1: values.length > 38 ? values[38].toString() : "254",  // 39: Wing 5th Option 1
-      wing5thOption2: values.length > 39 ? values[39].toString() : "254"   // 40: Wing 5th Option 2
+      wing5thOption2: values.length > 39 ? values[39].toString() : "254",  // 40: Wing 5th Option 2
+      socket1: values.length > 15 ? values[15].toString() : "65535",  // 16: Socket 1
+      socket2: values.length > 16 ? values[16].toString() : "65535",  // 17: Socket 2
+      socket3: values.length > 17 ? values[17].toString() : "65535",  // 18: Socket 3
+      socket4: values.length > 18 ? values[18].toString() : "65535",  // 19: Socket 4
+      socket5: values.length > 19 ? values[19].toString() : "65535"   // 20: Socket 5
     }
   } catch (error) {
     console.error('Error parsing item from values:', error)
@@ -154,6 +164,11 @@ export function convertWarehouseItemsToGrid(warehouseItems: WarehouseItemData[])
     masteryBonus: item.masteryBonus,
     wing5thOption1: item.wing5thOption1,
     wing5thOption2: item.wing5thOption2,
+    socket1: item.socket1,
+    socket2: item.socket2,
+    socket3: item.socket3,
+    socket4: item.socket4,
+    socket5: item.socket5,
     // Add default dimensions - these will be overridden by item data from database
     width: 1,
     height: 1
@@ -333,12 +348,12 @@ export function encodeWarehouseData(items: WarehouseItemData[]): string {
       values[13] = 0                   // 13: Unknown (usually 0)
       values[14] = 0                   // 14: Unknown (usually 0)
       
-      // Fill the rest with standard padding values
-      values[15] = 65535               // 15: Standard padding
-      values[16] = 65535               // 16: Standard padding
-      values[17] = 65535               // 17: Standard padding
-      values[18] = 65535               // 18: Standard padding
-      values[19] = 65535               // 19: Standard padding
+      // Socket System values (positions 16-20 in the item code)
+      values[15] = parseInt(item.socket1 || '65535')  // 16: Socket 1
+      values[16] = parseInt(item.socket2 || '65535')  // 17: Socket 2
+      values[17] = parseInt(item.socket3 || '65535')  // 18: Socket 3
+      values[18] = parseInt(item.socket4 || '65535')  // 19: Socket 4
+      values[19] = parseInt(item.socket5 || '65535')  // 20: Socket 5
       values[20] = parseInt(item.masteryBonus || '0')  // 20: Mastery Bonus
       values[21] = 0                   // 21: Standard padding
       values[22] = 0                   // 22: Standard padding
