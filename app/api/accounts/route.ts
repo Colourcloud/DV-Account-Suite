@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { username, password, email, vip } = body
+    const { username, password, email, vip, hashMethod } = body
     
     if (!username || !password || !email) {
       return NextResponse.json(
@@ -44,10 +44,16 @@ export async function POST(request: NextRequest) {
       username,
       password,
       email,
-      vip: vip || false
+      vip: vip || false,
+      hashMethod: hashMethod || 'muonline' // Default to MUonline method
     })
     
-    return NextResponse.json({ success: true, result })
+    return NextResponse.json({ 
+      success: true, 
+      result,
+      message: 'Account created successfully',
+      hashMethod: hashMethod || 'muonline'
+    })
   } catch (error) {
     console.error('Error creating account:', error)
     return NextResponse.json(

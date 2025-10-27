@@ -33,32 +33,7 @@ const navigation = [
     name: "Characters",
     href: "/characters",
     icon: Gamepad2,
-  },
-  {
-    name: "Search",
-    href: "/search",
-    icon: Search,
-  },
-  {
-    name: "Statistics",
-    href: "/statistics",
-    icon: BarChart3,
-  },
-  {
-    name: "Database",
-    href: "/database",
-    icon: Database,
-  },
-  {
-    name: "Security",
-    href: "/security",
-    icon: Shield,
-  },
-  {
-    name: "Settings",
-    href: "/settings",
-    icon: Settings,
-  },
+  }
 ]
 
 interface SidebarProps {

@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard/layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -7,30 +10,46 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { CreateAccountModal } from "@/components/create-account-modal"
 import { Search, Filter, UserPlus, Edit, Trash2, Shield, Ban, CheckCircle } from "lucide-react"
-import { AccountManager } from "@/lib/database"
 import Link from "next/link"
 
-export default async function AccountsPage() {
-  // Fetch account statistics from database
-  let stats = {
+export default function AccountsPage() {
+  const [stats, setStats] = useState({
     total: 0,
     active: 0,
     vip: 0,
     banned: 0
+  })
+  const [accounts, setAccounts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await fetch('/api/accounts/list')
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch accounts data')
+      }
+      
+      const data = await response.json()
+      setStats(data.stats)
+      setAccounts(data.accounts)
+    } catch (err) {
+      console.error('Error fetching account data:', err)
+      setError('Failed to load account data')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // Fetch accounts data from database
-  let accounts: any[] = []
-  let error: string | null = null
-
-  try {
-    stats = await AccountManager.getAccountStats()
-    accounts = await AccountManager.getAllAccounts(50, 0) as any[] // Get first 50 accounts
-  } catch (err) {
-    console.error('Error fetching account data:', err)
-    error = 'Failed to load account data'
-  }
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   const getStatusBadge = (blocked: number) => {
     if (blocked === 0) {
@@ -67,7 +86,7 @@ export default async function AccountsPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button>
+          <Button onClick={() => setShowCreateModal(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Add Account
           </Button>
@@ -81,7 +100,9 @@ export default async function AccountsPage() {
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : stats.total}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -90,7 +111,9 @@ export default async function AccountsPage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.active}</div>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : stats.active}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -99,7 +122,9 @@ export default async function AccountsPage() {
             <Ban className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.banned}</div>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : stats.banned}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -108,7 +133,9 @@ export default async function AccountsPage() {
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.vip}</div>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : stats.vip}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -160,7 +187,16 @@ export default async function AccountsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {accounts.length === 0 ? (
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <div className="flex flex-col items-center space-y-2">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
+                      <p className="text-muted-foreground">Loading accounts...</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : accounts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
                     <div className="flex flex-col items-center space-y-2">
@@ -241,6 +277,15 @@ export default async function AccountsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Create Account Modal */}
+      <CreateAccountModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          fetchData() // Refresh accounts data
+        }}
+      />
     </DashboardLayout>
   )
 }

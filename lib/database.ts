@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise'
+import { MUonlinePassword } from './muonline-password'
 
 // Database configuration
 const dbConfig = {
@@ -70,13 +71,62 @@ export class AccountManager {
     password: string
     email: string
     vip?: boolean
+    hashMethod?: 'md5' | 'sha256' | 'double-md5' | 'muonline'
   }) {
     const connection = await getConnection()
     try {
+      // Hash the password if it's not already hashed
+      let hashedPassword = accountData.password
+      
+      // Check if password is already a hash (64 chars = SHA-256, 32 chars = MD5)
+      if (accountData.password.length !== 32 && accountData.password.length !== 64) {
+        // Password is plain text, hash it
+        const method = accountData.hashMethod || 'muonline'
+        hashedPassword = MUonlinePassword.hashPassword(accountData.password, method, accountData.username)
+      }
+      
+      // Get current timestamp for register field
+      const now = new Date()
+      const registerTimestamp = parseInt(now.getFullYear().toString() + 
+        (now.getMonth() + 1).toString().padStart(2, '0') + 
+        now.getDate().toString().padStart(2, '0') + 
+        now.getHours().toString().padStart(2, '0') + 
+        now.getMinutes().toString().padStart(2, '0') + 
+        now.getSeconds().toString().padStart(2, '0'))
+      
       const [result] = await connection.execute(
-        'INSERT INTO accounts (account, password, email, secured) VALUES (?, ?, ?, ?)',
-        [accountData.username, accountData.password, accountData.email, 1]
+        `INSERT INTO accounts (
+          account, password, email, secured, blocked, 
+          register, created_at, updated_at, activated,
+          deletion_token, passlost_token, email_token, new_email, social_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          accountData.username, 
+          hashedPassword, 
+          accountData.email, 
+          1, // secured
+          0, // blocked
+          registerTimestamp, // register
+          now, // created_at
+          now, // updated_at
+          1, // activated
+          '0', // deletion_token
+          '0', // passlost_token
+          '0', // email_token
+          '0', // new_email
+          '0'  // social_id
+        ]
       )
+      
+      // If VIP is requested, create account_data entry
+      if (accountData.vip) {
+        const accountId = (result as any).insertId
+        await connection.execute(
+          'INSERT INTO account_data (account_id, vip_status) VALUES (?, ?)',
+          [accountId, 1]
+        )
+      }
+      
       return result
     } finally {
       connection.release()
