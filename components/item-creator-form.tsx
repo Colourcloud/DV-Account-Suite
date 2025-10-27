@@ -70,6 +70,48 @@ const WING_5TH_OPTIONS = [
   { value: "10", label: "Increase Agility by 65" }
 ]
 
+// Socket Seed Options
+const SOCKET_OPTIONS = [
+  { value: "65535", label: "No Socket" },
+  { value: "65534", label: "Empty Socket" },
+  // Fire Seeds
+  { value: "200", label: "(Fire) Increases DMG and Wizardy DMG for every 20 Levels. Increases by +1.5" },
+  { value: "201", label: "(Fire) Attack Speed Increase by 11" },
+  { value: "202", label: "(Fire) Maximum Attack/Wizardy Increase by 45" },
+  { value: "203", label: "(Fire) Minimum Attack/Wizardy Increase by 35" },
+  { value: "204", label: "(Fire) Attack/Wizardy Increase by 35" },
+  { value: "205", label: "(Fire) AG Cost Decrease by 45%" },
+  // Water Seeds
+  { value: "210", label: "(Water) Block Rate Increase 14%" },
+  { value: "211", label: "(Water) Defence Increase +41" },
+  { value: "212", label: "(Water) Shield Protection Increases 350%" },
+  { value: "213", label: "(Water) Damage Reduction 8%" },
+  { value: "214", label: "(Water) Damage Reflection 9%" },
+  // Ice Seeds
+  { value: "216", label: "(Ice) Monster Destruction for the life increases +372" },
+  { value: "217", label: "(Ice) Monster Destruction for the mana increases +601" },
+  { value: "218", label: "(Ice) Skill Attack Increases +57" },
+  { value: "219", label: "(Ice) Attack Rating Increases +42" },
+  { value: "220", label: "(Ice) Item Durability Increases +40%" },
+  // Wind Seeds
+  { value: "221", label: "(Wind) Automatic Life Recovery Increases +21" },
+  { value: "222", label: "(Wind) Maximum Life Increases +165" },
+  { value: "223", label: "(Wind) Maximum Mana Increases +215" },
+  { value: "224", label: "(Wind) Automatic Mana Recovery Increases +37" },
+  { value: "225", label: "(Wind) Maximum AG Increases +126" },
+  { value: "226", label: "(Wind) AG Value Increases +13" },
+  // Lightning Seeds
+  { value: "229", label: "(Lightning) Excellent Damage Increases +36" },
+  { value: "230", label: "(Lightning) Excellent Damage Rate Increases +14%" },
+  { value: "231", label: "(Lightning) Critical Damage Increases +47" },
+  { value: "232", label: "(Lightning) Critical Damage Rate Increases +12%" },
+  // Earth Seeds
+  { value: "234", label: "(Earth) Strength Increases +11" },
+  { value: "235", label: "(Earth) Agility Increases +5" },
+  { value: "236", label: "(Earth) Health Increases +38" },
+  { value: "237", label: "(Earth) Energy Increases +17" }
+]
+
 interface ItemCreatorFormProps {
   onItemCreate?: (itemData: { 
     categoryGroup: number
@@ -439,81 +481,6 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
             </div>
           )}
 
-          {/* Socket System Section */}
-          <div className="space-y-4 border-t py-2 mt-6">
-            <Label className="text-base font-medium">Socket System</Label>
-            
-            {/* First row - Socket 1 and Socket 2 side by side */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="socket1">Socket 1</Label>
-                <Select value={socket1} onValueChange={setSocket1}>
-                  <SelectTrigger id="socket1" className="w-full">
-                    <SelectValue placeholder="Select socket..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="65535">No Socket</SelectItem>
-                    <SelectItem value="65534">Empty Socket</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="socket2">Socket 2</Label>
-                <Select value={socket2} onValueChange={setSocket2}>
-                  <SelectTrigger id="socket2" className="w-full">
-                    <SelectValue placeholder="Select socket..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="65535">No Socket</SelectItem>
-                    <SelectItem value="65534">Empty Socket</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Second row - Socket 3, 4, 5 */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="socket3">Socket 3</Label>
-                <Select value={socket3} onValueChange={setSocket3}>
-                  <SelectTrigger id="socket3" className="w-full">
-                    <SelectValue placeholder="Select socket..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="65535">No Socket</SelectItem>
-                    <SelectItem value="65534">Empty Socket</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="socket4">Socket 4</Label>
-                <Select value={socket4} onValueChange={setSocket4}>
-                  <SelectTrigger id="socket4" className="w-full">
-                    <SelectValue placeholder="Select socket..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="65535">No Socket</SelectItem>
-                    <SelectItem value="65534">Empty Socket</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="socket5">Socket 5</Label>
-                <Select value={socket5} onValueChange={setSocket5}>
-                  <SelectTrigger id="socket5" className="w-full">
-                    <SelectValue placeholder="Select socket..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="65535">No Socket</SelectItem>
-                    <SelectItem value="65534">Empty Socket</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
 
           {/* Additional Options Tabs */}
           <div className="space-y-4 border-t py-2 mt-6">
@@ -650,8 +617,111 @@ export function ItemCreatorForm({ onItemCreate }: ItemCreatorFormProps) {
             </Tabs>
           </div>
 
+          {/* Socket System Section */}
+          <div className="border-t m-0">
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="socket-system">
+                <AccordionTrigger className="text-base font-medium text-blue-400">
+                  Socket System
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-4 pt-2">
+                    {/* First row - Socket 1 and Socket 2 side by side */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="socket1">Socket 1</Label>
+                        <Select value={socket1} onValueChange={setSocket1}>
+                          <SelectTrigger id="socket1" className="w-full">
+                            <SelectValue placeholder="Select socket..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SOCKET_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="socket2">Socket 2</Label>
+                        <Select value={socket2} onValueChange={setSocket2}>
+                          <SelectTrigger id="socket2" className="w-full">
+                            <SelectValue placeholder="Select socket..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SOCKET_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Second row - Socket 3 and Socket 4 side by side */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="socket3">Socket 3</Label>
+                        <Select value={socket3} onValueChange={setSocket3}>
+                          <SelectTrigger id="socket3" className="w-full">
+                            <SelectValue placeholder="Select socket..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SOCKET_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="socket4">Socket 4</Label>
+                        <Select value={socket4} onValueChange={setSocket4}>
+                          <SelectTrigger id="socket4" className="w-full">
+                            <SelectValue placeholder="Select socket..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SOCKET_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Third row - Socket 5 centered */}
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="socket5">Socket 5</Label>
+                        <Select value={socket5} onValueChange={setSocket5}>
+                          <SelectTrigger id="socket5" className="w-full">
+                            <SelectValue placeholder="Select socket..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SOCKET_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+
           {/* Harmony Options Section */}
-          <div className="mt-8 border-t py-2">
+          <div className="border-t border-b m-0 mb-4">
             <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="harmony-options">
                 <AccordionTrigger className="text-base font-medium text-purple-400">

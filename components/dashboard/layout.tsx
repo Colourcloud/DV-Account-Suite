@@ -17,7 +17,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="hidden border-r bg-muted/40 md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-[60px] items-center border-b px-6">
-            <span className="text-lg font-semibold">DV Account Suite</span>
+            <span className="text-lg font-semibold">DV Account Suite <span className="text-xs text-gray-500">v0.0.3</span></span>
           </div>
           <div className="flex-1 overflow-auto py-2">
             <Sidebar />

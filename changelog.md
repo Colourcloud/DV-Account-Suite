@@ -5,6 +5,8 @@
 - Added 5th wing options to the item creator
 - Added Harmony Options to the item creator
 - Mastery Set items added to the item creator
+- Added support for socket items + seeds. Currently it supports level 5 seeds. level 10-20 will be added soon
+
 
 
 # [v0.0.2]

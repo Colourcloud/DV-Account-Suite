@@ -8,7 +8,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Package, Plus, Trash2, RefreshCw, MoreHorizontal } from "lucide-react"
 import { getItemById, ItemData, getItemImagePathById } from "@/lib/items-data"
-import { decodeWarehouseData, positionToGridCoords, WarehouseItemData, convertWarehouseItemsToGrid, decodeExcellentOptions, getItemTypeFromId, encodeWarehouseData, canPlaceItem, placeItemInGrid, gridCoordsToPosition, decodeWing5thOptions } from "@/lib/warehouse-utils"
+import { decodeWarehouseData, positionToGridCoords, WarehouseItemData, convertWarehouseItemsToGrid, decodeExcellentOptions, getItemTypeFromId, encodeWarehouseData, canPlaceItem, placeItemInGrid, gridCoordsToPosition, decodeWing5thOptions, decodeSocketOptions } from "@/lib/warehouse-utils"
 
 interface WarehouseItem {
   id: number
@@ -448,6 +448,20 @@ export function WarehouseGrid({ accountId, characterName, warehouseData, onWareh
                 </div>
                 {decodeWing5thOptions(item.wing5thOption1, item.wing5thOption2).map((option, index) => (
                   <div key={index} className="text-sm text-yellow-400 text-center font-light">
+                    {option}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Socket Options - only show if item has socket options */}
+            {decodeSocketOptions(item.socket1, item.socket2, item.socket3, item.socket4, item.socket5).length > 0 && (
+              <div className="">
+                <div className="text-sm font-medium text-center text-purple-500 pb-4">
+                  Socket Item Option Info:
+                </div>
+                {decodeSocketOptions(item.socket1, item.socket2, item.socket3, item.socket4, item.socket5).map((option, index) => (
+                  <div key={index} className="text-xs text-purple-500 text-center font-light">
                     {option}
                   </div>
                 ))}

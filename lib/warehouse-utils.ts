@@ -454,3 +454,71 @@ export function placeItemInGrid(
 
   return newGrid
 }
+
+/**
+ * Decodes socket options from socket values
+ * @param socket1 - Socket 1 value
+ * @param socket2 - Socket 2 value
+ * @param socket3 - Socket 3 value
+ * @param socket4 - Socket 4 value
+ * @param socket5 - Socket 5 value
+ * @returns Array of socket option descriptions
+ */
+export function decodeSocketOptions(socket1?: string, socket2?: string, socket3?: string, socket4?: string, socket5?: string): string[] {
+  const options: string[] = []
+  
+  const socketOptions: { [key: string]: string } = {
+    "65535": "No Socket",
+    "65534": "Empty Socket",
+    // Fire Seeds
+    "200": "(Fire) Increases DMG and Wizardy DMG for every 20 Levels. Increases by +1.5",
+    "201": "(Fire) Attack Speed Increase by 11",
+    "202": "(Fire) Maximum Attack/Wizardy Increase by 45",
+    "203": "(Fire) Minimum Attack/Wizardy Increase by 35",
+    "204": "(Fire) Attack/Wizardy Increase by 35",
+    "205": "(Fire) AG Cost Decrease by 45%",
+    // Water Seeds
+    "210": "(Water) Block Rate Increase 14%",
+    "211": "(Water) Defence Increase +41",
+    "212": "(Water) Shield Protection Increases 350%",
+    "213": "(Water) Damage Reduction 8%",
+    "214": "(Water) Damage Reflection 9%",
+    // Ice Seeds
+    "216": "(Ice) Monster Destruction for the life increases +372",
+    "217": "(Ice) Monster Destruction for the mana increases +601",
+    "218": "(Ice) Skill Attack Increases +57",
+    "219": "(Ice) Attack Rating Increases +42",
+    "220": "(Ice) Item Durability Increases +40%",
+    // Wind Seeds
+    "221": "(Wind) Automatic Life Recovery Increases +21",
+    "222": "(Wind) Maximum Life Increases +165",
+    "223": "(Wind) Maximum Mana Increases +215",
+    "224": "(Wind) Automatic Mana Recovery Increases +37",
+    "225": "(Wind) Maximum AG Increases +126",
+    "226": "(Wind) AG Value Increases +13",
+    // Lightning Seeds
+    "229": "(Lightning) Excellent Damage Increases +36",
+    "230": "(Lightning) Excellent Damage Rate Increases +14%",
+    "231": "(Lightning) Critical Damage Increases +47",
+    "232": "(Lightning) Critical Damage Rate Increases +12%",
+    // Earth Seeds
+    "234": "(Earth) Strength Increases +11",
+    "235": "(Earth) Agility Increases +5",
+    "236": "(Earth) Health Increases +38",
+    "237": "(Earth) Energy Increases +17"
+  }
+  
+  const sockets = [socket1, socket2, socket3, socket4, socket5]
+  
+  sockets.forEach(socket => {
+    if (socket && socket !== "65535" && socket !== "0") {
+      if (socket === "65534") {
+        options.push("Empty Socket")
+      } else if (socketOptions[socket]) {
+        options.push(socketOptions[socket])
+      }
+    }
+  })
+  
+  return options
+}
