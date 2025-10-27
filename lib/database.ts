@@ -3,7 +3,7 @@ import { MUonlinePassword } from './muonline-password'
 
 // Database configuration
 const dbConfig = {
-  host: process.env.DB_HOST || '192.168.4.24',
+  host: process.env.DB_HOST || '192.168.4.24', //change to your ipv4 address
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '1234',
   database: process.env.DB_NAME || 'muonline',
