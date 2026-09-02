@@ -1,5 +1,7 @@
 # DV Account Suite - MUonline Server Management
 
+**NOTE: This project is currently outdated and doesn't support the latest version of MUOnline. Please only use it as a reference or starting point to develop your own tool**
+
 A modern web-based account management system for MUonline private servers with a beautiful dashboard UI, dark mode support, and SQL database integration.
 
 ![Dashboard Screenshot](./public/dashboard.png)
