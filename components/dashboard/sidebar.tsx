@@ -16,6 +16,7 @@ import {
   Home,
   UserPlus,
   Search,
+  ShoppingCart,
 } from "lucide-react"
 
 const navigation = [
@@ -33,6 +34,11 @@ const navigation = [
     name: "Characters",
     href: "/characters",
     icon: Gamepad2,
+  },
+  {
+    name: "Shop Editor",
+    href: "/shop-editor",
+    icon: ShoppingCart,
   }
 ]
 
