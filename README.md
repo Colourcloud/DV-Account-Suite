@@ -11,15 +11,15 @@ A modern web-based account management system for MUonline private servers with a
 
 ## Features
 
-- 🎨 **Modern UI** - Built with shadcn/ui components and Tailwind CSS
-- 🌙 **Dark Mode** - Full dark/light mode support with system preference detection
-- 📊 **Dashboard** - Comprehensive overview with statistics and recent activity
-- 👥 **Account Management** - Create, edit, delete, and manage player accounts
-- 🎮 **Character Management** - View and manage player characters
-- 🔍 **Search & Filter** - Advanced search and filtering capabilities
-- 🛡️ **Security** - Account status management (active, banned, VIP)
-- 📱 **Responsive** - Mobile-friendly design
-- 🗄️ **SQL Integration** - Direct MySQL database connectivity
+- Built with shadcn/ui components and Tailwind CSS
+- Full dark/light mode support with system preference detection
+- Comprehensive overview with statistics and recent activity
+- Create, edit, delete, and manage player accounts
+- View and manage player characters
+- Advanced search and filtering capabilities
+- Account status management (active, banned, VIP)
+- Mobile-friendly design
+- Direct MySQL database connectivity
 
 ## Tech Stack
 
